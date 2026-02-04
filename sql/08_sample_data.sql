@@ -88,17 +88,3 @@ INSERT INTO InstructorSalary (instructorID, hourlyRate, bankAccount) VALUES
 (1, 50, 'ACC001'),   -- Dr. Hassan
 (2, 60, 'ACC002'),   -- Dr. Rami
 (3, 55, 'ACC003');   -- Dr. Maya
-
-INSERT INTO InstructorTimeEntry (instructorID, SectionID, entryDate, hoursWorked, approved)
-VALUES
--- Maya (CE301 SectionID = 1)
-(3, 1, '2024-09-10', 3, 1),
-(3, 1, '2024-09-12', 2, 1),
-
--- Hassan (EE410 SectionID = 2)
-(1, 2, '2024-09-11', 4, 1),
-(1, 2, '2024-09-13', 3, 1),
-
--- Rami (ME210 SectionID = 3)
-(2, 3, '2024-09-15', 5, 1);
-GO
