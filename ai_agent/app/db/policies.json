@@ -1,0 +1,65 @@
+{
+  "enrollment_policy": {
+    "title": "Course Enrollment Policy",
+    "rules": [
+      "A student may enroll in a section only if all prerequisite courses for that course have been completed with a passing grade (A, B, C, or D).",
+      "A student may not enroll in a section that has already reached its capacity.",
+      "A student may not hold two active enrollments in the same section (no duplicate enrollments).",
+      "A student must have a sufficient account balance to cover the course fee before enrolling; the fee is deducted from the student's balance when the enrollment is executed.",
+      "All enrollment requests are staged for confirmation and only executed after the student explicitly confirms."
+    ]
+  },
+  "tuition_policy": {
+    "title": "Tuition & Payment Policy",
+    "rules": [
+      "Each course has a fixed course fee shown in the course catalog.",
+      "Enrolling in a section deducts the course fee from the student's account balance.",
+      "Students with outstanding balances should make a payment before attempting to enroll in additional sections.",
+      "Refunds and balance adjustments must be processed by the Finance Office and are outside the scope of this agent."
+    ]
+  },
+  "grading_policy": {
+    "title": "Grading & GPA Policy",
+    "rules": [
+      "Valid letter grades are A, B, C, D, and F.",
+      "Grade points: A = 4.0, B = 3.0, C = 2.0, D = 1.0, F = 0.0.",
+      "GPA is the credit-weighted average of grade points across all COMPLETED enrollments.",
+      "A grade of F does not satisfy a prerequisite requirement.",
+      "Once a grade is marked 'Locked', it can no longer be modified by an instructor."
+    ]
+  },
+  "academic_standing_policy": {
+    "title": "Academic Standing Policy",
+    "rules": [
+      "GPA >= 3.5: Dean's List standing.",
+      "2.0 <= GPA < 3.5: Good standing.",
+      "GPA < 2.0: Academic probation - the student should meet with their academic advisor.",
+      "Students with no completed courses have no academic standing yet."
+    ]
+  },
+  "teaching_load_policy": {
+    "title": "Instructor Teaching Load Policy",
+    "rules": [
+      "Each instructor has a maximum credit-hour teaching load per semester (max_credits, default 12).",
+      "Instructor workload and payroll are based on approved time entries only; unapproved hours are not paid.",
+      "Hourly pay = approved hours x the instructor's hourly rate."
+    ]
+  },
+  "section_utilization_policy": {
+    "title": "Section Capacity & Utilization Policy",
+    "rules": [
+      "A section is 'Full' when enrolled students equal or exceed capacity.",
+      "A section is 'Underutilized' when enrollment is below 40% of capacity.",
+      "A section is 'Optimal' when enrollment is between 40% and 99% of capacity (exclusive of Full)."
+    ]
+  },
+  "agent_scope_policy": {
+    "title": "AI Agent Scope & Safety Policy",
+    "rules": [
+      "The agent only answers questions about university academic and financial operations covered by its tools.",
+      "The agent never fabricates student records, grades, balances, or course information - all factual answers are grounded in the university database or this policy file.",
+      "Any action that creates or modifies a record (e.g. an enrollment) requires explicit user confirmation before execution.",
+      "Requests outside the agent's supported domain are declined with: 'I cannot perform that action because it is outside my supported university operations domain.'"
+    ]
+  }
+}

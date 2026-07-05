@@ -1,0 +1,94 @@
+# =============================================================================
+# University Operations AI Agent
+#
+# Single-command, fully offline-capable startup:
+#     docker compose up --build
+#
+# Then open http://localhost:8501
+#
+# Services:
+#   - ollama       : local LLM server (PRIMARY/REQUIRED LLM backend - no API
+#                     key needed). Model data persists in the "ollama_data"
+#                     volume so subsequent runs are fully offline.
+#   - ollama-pull   : one-shot job that pulls the configured model (default
+#                     "llama3.1") into the ollama service on first run, then
+#                     exits successfully. Safe/cheap to re-run - if the model
+#                     is already present it's a no-op.
+#   - agent         : Streamlit UI + LangGraph agent. Connects to the bundled
+#                     ollama service at http://ollama:11434 by default.
+#
+# OpenAI/Anthropic remain available as OPTIONAL FALLBACK providers: set
+# LLM_PROVIDER=openai (or anthropic) and the matching *_API_KEY in .env. The
+# ollama/ollama-pull services still start in that case (harmless - they just
+# run locally) but are not required for the agent to work.
+#
+# Configuration is via environment variables - copy .env.example to .env. By
+# default no edits are required: LLM_PROVIDER=ollama needs no API key. See
+# .env.example for the full list of supported variables.
+# =============================================================================
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: university_ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 15s
+    restart: unless-stopped
+
+  # One-shot: pulls the configured model into the "ollama" service, then
+  # exits 0. The "agent" service waits for this to complete successfully
+  # before starting, so the model is always ready before the first chat.
+  ollama-pull:
+    image: ollama/ollama:latest
+    container_name: university_ollama_pull
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    entrypoint: ["sh", "-c", "ollama pull ${LLM_MODEL:-llama3.1}"]
+    restart: "no"
+
+  agent:
+    build: .
+    image: university-operations-ai-agent:latest
+    container_name: university_operations_ai_agent
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    environment:
+      # Persist the SQLite database on a named volume so enrollment actions,
+      # logs, and preferences survive container restarts.
+      DATABASE_PATH: /app/data/university.db
+      # Default LLM provider is "ollama" (no API key required). If .env sets
+      # LLM_PROVIDER=openai/anthropic (optional fallback), that value is
+      # passed through here.
+      LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
+      # Always reach the bundled "ollama" service over the Compose network
+      # when running in Docker (this overrides any OLLAMA_BASE_URL in .env,
+      # which is for local/non-Docker runs - see .env.example).
+      OLLAMA_BASE_URL: http://ollama:11434
+    volumes:
+      - agent_data:/app/data
+    depends_on:
+      ollama-pull:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8501/_stcore/health').status == 200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+volumes:
+  agent_data:
+  ollama_data:

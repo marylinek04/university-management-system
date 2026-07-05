@@ -1,0 +1,19 @@
+# University Operations AI Agent - Python dependencies
+#
+# Layer 1 (Web Interface)
+streamlit>=1.32,<2
+
+# Layer 2 (Orchestration)
+langgraph>=0.2.0,<0.3
+
+# Layer 3 (LLM reasoning core) - provider-agnostic
+langchain-core>=0.3.0,<0.4
+langchain-openai>=0.2.0,<0.3
+langchain-anthropic>=0.2.0,<0.3
+langchain-ollama>=0.2.0,<0.3
+
+# Pydantic v2 input schemas for tools
+pydantic>=2.6,<3
+
+# Local development convenience: load .env files automatically
+python-dotenv>=1.0,<2

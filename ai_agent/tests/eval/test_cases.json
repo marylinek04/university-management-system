@@ -1,0 +1,541 @@
+{
+  "description": "Evaluation suite for the University Operations AI Agent. Each test case is a short conversation (1-2 turns) run against a fresh, isolated copy of the seeded database. Expected values are derived directly from app/db/seed_data.sql so checks are grounded in known, deterministic facts.",
+  "current_semester": "Spring 2026",
+  "test_cases": [
+    {
+      "id": "IQ-01",
+      "category": "information_query_course_single",
+      "description": "Course detail lookup by code.",
+      "user_name": "Aseel Menhem",
+      "user_role": "student",
+      "turns": [
+        {
+          "message": "Can you tell me about course CE410? I'd like the credits, fee, and prerequisites.",
+          "expected_intent": "information_query",
+          "expected_tools": ["get_university_information"],
+          "response_contains": ["CE410", "Operating Systems", "CE301", "1800.00"],
+          "expect_fallback": false
+        }
+      ]
+    },
+    {
+      "id": "IQ-02",
+      "category": "information_query_course_list",
+      "description": "List the full course catalog.",
+      "user_name": "Aseel Menhem",
+      "user_role": "student",
+      "turns": [
+        {
+          "message": "What courses does the university offer? List all of them.",
+          "expected_intent": "information_query",
+          "expected_tools": ["get_university_information"],
+          "response_contains": ["CE205", "CE301", "CE410", "EE320", "CV220"],
+          "expect_fallback": false
+        }
+      ]
+    },
+    {
+      "id": "IQ-03",
+      "category": "information_query_policy",
+      "description": "Enrollment policy lookup (grounded in policies.json, not the LLM).",
+      "user_name": "Maryline Karam",
+      "user_role": "student",
+      "turns": [
+        {
+          "message": "What is the course enrollment policy?",
+          "expected_intent": "information_query",
+          "expected_tools": ["get_university_information"],
+          "response_contains": ["Course Enrollment Policy", "prerequisite", "capacity"],
+          "expect_fallback": false
+        }
+      ]
+    },
+    {
+      "id": "IQ-04",
+      "category": "information_query_instructor",
+      "description": "Instructor detail lookup, including the sections they teach.",
+      "user_name": "Maryline Karam",
+      "user_role": "student",
+      "turns": [
+        {
+          "message": "Tell me about the instructor Dr. Maya Saad - which department and which sections does she teach?",
+          "expected_intent": "information_query",
+          "expected_tools": ["get_university_information"],
+          "response_contains": ["Maya Saad", "Computer Engineering", "CE301", "CE410"],
+          "expect_fallback": false
+        }
+      ]
+    },
+    {
+      "id": "IQ-05",
+      "category": "information_query_section",
+      "description": "Section lookup for the current semester - this section is at capacity (FULL).",
+      "user_name": "Maryline Karam",
+      "user_role": "student",
+      "turns": [
+        {
+          "message": "Is there an open section of CE301 in Spring 2026?",
+          "expected_intent": "information_query",
+          "expected_tools": ["get_university_information"],
+          "response_contains": ["CE301", "Spring 2026", "1/1", "FULL"],
+          "expect_fallback": false
+        }
+      ]
+    },
+    {
+      "id": "IQ-06",
+      "category": "information_query_semester",
+      "description": "List all semesters, including which one is current.",
+      "user_name": "Maryline Karam",
+      "user_role": "student",
+      "turns": [
+        {
+          "message": "What semesters are in the system, and which one is the current one?",
+          "expected_intent": "information_query",
+          "expected_tools": ["get_university_information"],
+          "response_contains": ["Spring 2026", "(current)", "Fall 2024"],
+          "expect_fallback": false
+        }
+      ]
+    },
+    {
+      "id": "IQ-07",
+      "category": "information_query_department",
+      "description": "Department detail lookup.",
+      "user_name": "Maryline Karam",
+      "user_role": "student",
+      "turns": [
+        {
+          "message": "What faculty is the Computer Engineering department part of?",
+          "expected_intent": "information_query",
+          "expected_tools": ["get_university_information"],
+          "response_contains": ["Computer Engineering", "Faculty of Engineering"],
+          "expect_fallback": false
+        }
+      ]
+    },
+    {
+      "id": "IQ-08",
+      "category": "information_query_program",
+      "description": "Program detail lookup.",
+      "user_name": "Maryline Karam",
+      "user_role": "student",
+      "turns": [
+        {
+          "message": "What degree level is the Computer Engineering Program?",
+          "expected_intent": "information_query",
+          "expected_tools": ["get_university_information"],
+          "response_contains": ["Computer Engineering Program", "Bachelor"],
+          "expect_fallback": false
+        }
+      ]
+    },
+    {
+      "id": "EC-01",
+      "category": "eligibility_check_pass",
+      "description": "Eligibility check that should PASS: prerequisite met, balance sufficient, seats available.",
+      "user_name": "Maryline Karam",
+      "user_role": "registrar",
+      "turns": [
+        {
+          "message": "Is Aseel Menhem eligible to enroll in CE410 for Spring 2026?",
+          "expected_intent": "eligibility_check",
+          "expected_tools": ["analyze_enrollment_eligibility"],
+          "response_contains": ["Aseel Menhem", "eligible", "CE410"],
+          "expect_eligible": true,
+          "expect_fallback": false
+        }
+      ]
+    },
+    {
+      "id": "EC-02",
+      "category": "eligibility_check_fail_prereq_and_balance",
+      "description": "Eligibility check that should FAIL for two reasons at once: missing prerequisite AND insufficient balance.",
+      "user_name": "Maryline Karam",
+      "user_role": "registrar",
+      "turns": [
+        {
+          "message": "Is Maryam Daaibes eligible to enroll in CE410 for Spring 2026?",
+          "expected_intent": "eligibility_check",
+          "expected_tools": ["analyze_enrollment_eligibility"],
+          "response_contains": ["Maryam Daaibes", "NOT eligible", "CE410", "Missing prerequisite", "Insufficient balance"],
+          "expect_eligible": false,
+          "expect_fallback": false
+        }
+      ]
+    },
+    {
+      "id": "EC-03",
+      "category": "eligibility_check_fail_capacity",
+      "description": "Eligibility check that should FAIL because the section is already full.",
+      "user_name": "Maryline Karam",
+      "user_role": "registrar",
+      "turns": [
+        {
+          "message": "Is Maryline Karam eligible to enroll in CE301 for Spring 2026?",
+          "expected_intent": "eligibility_check",
+          "expected_tools": ["analyze_enrollment_eligibility"],
+          "response_contains": ["Maryline Karam", "NOT eligible", "CE301", "full", "1/1"],
+          "expect_eligible": false,
+          "expect_fallback": false
+        }
+      ]
+    },
+    {
+      "id": "EC-04",
+      "category": "eligibility_check_fail_duplicate",
+      "description": "Eligibility check that should FAIL because the student is already enrolled in this section.",
+      "user_name": "Maryline Karam",
+      "user_role": "registrar",
+      "turns": [
+        {
+          "message": "Is Nour Hamad eligible to enroll in CE410 for Spring 2026?",
+          "expected_intent": "eligibility_check",
+          "expected_tools": ["analyze_enrollment_eligibility"],
+          "response_contains": ["Nour Hamad", "NOT eligible", "CE410", "already enrolled"],
+          "expect_eligible": false,
+          "expect_fallback": false
+        }
+      ]
+    },
+    {
+      "id": "EC-05",
+      "category": "eligibility_check_fail_prereq_only",
+      "description": "Eligibility check that should FAIL for exactly one reason: missing prerequisite (balance and capacity are both fine).",
+      "user_name": "Maryline Karam",
+      "user_role": "registrar",
+      "turns": [
+        {
+          "message": "Is Yousef Khalil eligible to enroll in CE410 for Spring 2026?",
+          "expected_intent": "eligibility_check",
+          "expected_tools": ["analyze_enrollment_eligibility"],
+          "response_contains": ["Yousef Khalil", "NOT eligible", "CE410", "Missing prerequisite"],
+          "expect_eligible": false,
+          "expect_fallback": false
+        }
+      ]
+    },
+    {
+      "id": "ER-01",
+      "category": "enrollment_request_confirm_yes_full_flow",
+      "description": "Full state-changing enrollment flow: request -> CONFIRMATION_REQUIRED -> user says yes -> ACTION_EXECUTION (enrollment created, fee deducted).",
+      "user_name": "Yousef Khalil",
+      "user_role": "student",
+      "turns": [
+        {
+          "message": "I'd like to enroll in CE205 for Spring 2026.",
+          "expected_intent": "enrollment_request",
+          "expected_tools": ["analyze_enrollment_eligibility", "create_enrollment_request"],
+          "response_contains": ["Yousef Khalil", "CE205", "eligible", "confirm"],
+          "expect_eligible": true,
+          "expect_pending_confirmation": true,
+          "expect_fallback": false
+        },
+        {
+          "message": "Yes, please proceed.",
+          "expected_intent": "confirm_yes",
+          "expected_tools": ["create_enrollment_request"],
+          "response_contains": ["Yousef Khalil", "CE205", "enrolled", "1200.00", "3800.00"],
+          "expect_confirm_with": {"tool": "create_enrollment_request", "confirm": true},
+          "expect_fallback": false
+        }
+      ]
+    },
+    {
+      "id": "ER-02",
+      "category": "enrollment_request_confirm_no_cancel",
+      "description": "Enrollment flow where the user declines the confirmation - no database changes should occur.",
+      "user_name": "Aseel Menhem",
+      "user_role": "student",
+      "turns": [
+        {
+          "message": "Can I enroll in CE410 for Spring 2026?",
+          "expected_intent": "enrollment_request",
+          "expected_tools": ["analyze_enrollment_eligibility", "create_enrollment_request"],
+          "response_contains": ["Aseel Menhem", "CE410", "eligible", "confirm"],
+          "expect_eligible": true,
+          "expect_pending_confirmation": true,
+          "expect_fallback": false
+        },
+        {
+          "message": "No, cancel that.",
+          "expected_intent": "confirm_no",
+          "expected_tools": ["create_enrollment_request"],
+          "response_contains": ["cancelled", "No changes were made"],
+          "expect_confirm_with": {"tool": "create_enrollment_request", "confirm": false},
+          "expect_fallback": false
+        }
+      ]
+    },
+    {
+      "id": "ER-03",
+      "category": "enrollment_request_missing_field",
+      "description": "Enrollment request with a missing required field (course_code) - the agent should ask for it instead of guessing or calling a tool.",
+      "user_name": "Karim Saleh",
+      "user_role": "student",
+      "turns": [
+        {
+          "message": "I want to enroll in a course for Spring 2026.",
+          "expected_intent": "enrollment_request",
+          "expected_tools": [],
+          "response_contains": ["course code"],
+          "expect_missing_fields": ["course_code"],
+          "expect_fallback": false
+        }
+      ]
+    },
+    {
+      "id": "SR-01",
+      "category": "student_report_transcript_summary",
+      "description": "Transcript summary report.",
+      "user_name": "Maryline Karam",
+      "user_role": "registrar",
+      "turns": [
+        {
+          "message": "Give me a transcript summary for Karim Saleh.",
+          "expected_intent": "student_report",
+          "expected_tools": ["generate_student_report"],
+          "response_contains": ["Karim Saleh", "CE205", "CE301", "CV220", "3.67"],
+          "expect_fallback": false
+        }
+      ]
+    },
+    {
+      "id": "SR-02",
+      "category": "student_report_gpa_summary",
+      "description": "GPA summary report.",
+      "user_name": "Maryline Karam",
+      "user_role": "registrar",
+      "turns": [
+        {
+          "message": "What is Maryam Daaibes' current GPA and academic standing?",
+          "expected_intent": "student_report",
+          "expected_tools": ["generate_student_report"],
+          "response_contains": ["Maryam Daaibes", "2.5", "Good Standing"],
+          "expect_fallback": false
+        }
+      ]
+    },
+    {
+      "id": "SR-03",
+      "category": "student_report_academic_standing_no_courses",
+      "description": "Academic standing report for a student with no completed courses (GPA is NULL).",
+      "user_name": "Maryline Karam",
+      "user_role": "registrar",
+      "turns": [
+        {
+          "message": "Can you give me an academic standing report for Yousef Khalil?",
+          "expected_intent": "student_report",
+          "expected_tools": ["generate_student_report"],
+          "response_contains": ["Yousef Khalil", "No academic standing yet", "Dean's List"],
+          "expect_fallback": false
+        }
+      ]
+    },
+    {
+      "id": "SR-04",
+      "category": "student_report_recommendations",
+      "description": "Study recommendations report based on completed and active courses.",
+      "user_name": "Maryline Karam",
+      "user_role": "registrar",
+      "turns": [
+        {
+          "message": "What courses would you recommend Nour Hamad take next?",
+          "expected_intent": "student_report",
+          "expected_tools": ["generate_student_report"],
+          "response_contains": ["Nour Hamad", "Currently enrolled", "CE301", "CE410", "EE320", "CV220"],
+          "expect_fallback": false
+        }
+      ]
+    },
+    {
+      "id": "GPA-01",
+      "category": "gpa_prediction",
+      "description": "Predict a student's future cumulative GPA given a planned course and hypothetical grade.",
+      "user_name": "Maryline Karam",
+      "user_role": "registrar",
+      "turns": [
+        {
+          "message": "If Aseel Menhem takes CE410 next and gets an A, what would her predicted cumulative GPA be?",
+          "expected_intent": "gpa_prediction",
+          "expected_tools": ["predict_future_gpa"],
+          "response_contains": ["Aseel Menhem", "Current GPA: 3.5", "Predicted cumulative GPA: 3.7", "CE410"],
+          "expect_fallback": false
+        }
+      ]
+    },
+    {
+      "id": "SP-01",
+      "category": "study_plan",
+      "description": "Generate a multi-semester study plan based on completed prerequisites.",
+      "user_name": "Maryline Karam",
+      "user_role": "registrar",
+      "turns": [
+        {
+          "message": "Generate a study plan for Karim Saleh.",
+          "expected_intent": "study_plan",
+          "expected_tools": ["generate_study_plan"],
+          "response_contains": ["Karim Saleh", "Semester 1", "CE410", "EE320"],
+          "expect_fallback": false
+        }
+      ]
+    },
+    {
+      "id": "PR-01",
+      "category": "payroll_report",
+      "description": "Instructor payroll report covering all approved time entries.",
+      "user_name": "Maryline Karam",
+      "user_role": "registrar",
+      "turns": [
+        {
+          "message": "Generate a payroll report for Dr. Hassan Nasser.",
+          "expected_intent": "payroll_report",
+          "expected_tools": ["generate_payroll_report"],
+          "response_contains": ["Hassan Nasser", "1150.00", "23.00"],
+          "expect_fallback": false
+        }
+      ]
+    },
+    {
+      "id": "SU-01",
+      "category": "section_utilization",
+      "description": "Section utilization analysis for the current semester.",
+      "user_name": "Maryline Karam",
+      "user_role": "registrar",
+      "turns": [
+        {
+          "message": "Analyze section utilization for Spring 2026.",
+          "expected_intent": "section_utilization",
+          "expected_tools": ["analyze_section_utilization"],
+          "response_contains": ["Spring 2026", "CE301", "Full sections: CE301", "Underutilized"],
+          "expect_fallback": false
+        }
+      ]
+    },
+    {
+      "id": "IR-01",
+      "category": "institution_report_tuition_summary",
+      "description": "Institution-wide tuition/balance summary, including the low-balance flag.",
+      "user_name": "Maryline Karam",
+      "user_role": "finance_officer",
+      "turns": [
+        {
+          "message": "Give me a tuition summary report for all students.",
+          "expected_intent": "institution_report",
+          "expected_tools": ["generate_institution_report"],
+          "response_contains": ["Tuition", "16500.00", "Maryam Daaibes", "LOW BALANCE"],
+          "expect_fallback": false
+        }
+      ]
+    },
+    {
+      "id": "IR-02",
+      "category": "institution_report_payroll_summary",
+      "description": "Institution-wide payroll summary across all instructors.",
+      "user_name": "Maryline Karam",
+      "user_role": "finance_officer",
+      "turns": [
+        {
+          "message": "Give me a payroll summary for all instructors.",
+          "expected_intent": "institution_report",
+          "expected_tools": ["generate_institution_report"],
+          "response_contains": ["Payroll Summary", "3275.00"],
+          "expect_fallback": false
+        }
+      ]
+    },
+    {
+      "id": "UNSUP-01",
+      "category": "unsupported_request",
+      "description": "Out-of-domain request must be refused with the exact policy-defined message and must NOT call any tool.",
+      "user_name": "Maryline Karam",
+      "user_role": "student",
+      "turns": [
+        {
+          "message": "Can you book me a flight to Paris and pay for it from my account balance?",
+          "expected_intent": "unsupported",
+          "expected_tools": [],
+          "response_contains": ["I cannot perform that action because it is outside my supported university operations domain."],
+          "expect_fallback": true
+        }
+      ]
+    },
+    {
+      "id": "MULTI-01",
+      "category": "multi_turn_memory",
+      "description": "The student identifier collected in turn 1 should persist in working memory and be reused in turn 2 without being re-stated.",
+      "user_name": "Maryline Karam",
+      "user_role": "registrar",
+      "turns": [
+        {
+          "message": "Is Aseel Menhem eligible to enroll in CE410 for Spring 2026?",
+          "expected_intent": "eligibility_check",
+          "expected_tools": ["analyze_enrollment_eligibility"],
+          "response_contains": ["Aseel Menhem", "eligible", "CE410"],
+          "expect_eligible": true,
+          "expect_fallback": false
+        },
+        {
+          "message": "What about CE301 instead?",
+          "expected_intent": "eligibility_check",
+          "expected_tools": ["analyze_enrollment_eligibility"],
+          "response_contains": ["Aseel Menhem", "CE301", "NOT eligible", "full"],
+          "expect_eligible": false,
+          "expect_fallback": false,
+          "notes": "student_identifier is NOT restated here - it must be carried over from turn 1's collected_information (working memory)."
+        }
+      ]
+    },
+    {
+      "id": "ROLE-01",
+      "category": "role_based_default_student",
+      "description": "A student asking about themselves in first person, without naming themselves, should have student_identifier default to their own account.",
+      "user_name": "Aseel Menhem",
+      "user_role": "student",
+      "turns": [
+        {
+          "message": "Am I eligible to enroll in CE410 for Spring 2026?",
+          "expected_intent": "eligibility_check",
+          "expected_tools": ["analyze_enrollment_eligibility"],
+          "response_contains": ["Aseel Menhem", "eligible", "CE410"],
+          "expect_eligible": true,
+          "expect_fallback": false
+        }
+      ]
+    },
+    {
+      "id": "ROLE-02",
+      "category": "role_based_default_instructor",
+      "description": "An instructor asking about their own payroll, without naming themselves, should have instructor_identifier default to their own account.",
+      "user_name": "Dr. Hassan Nasser",
+      "user_role": "instructor",
+      "turns": [
+        {
+          "message": "What's my payroll for this period?",
+          "expected_intent": "payroll_report",
+          "expected_tools": ["generate_payroll_report"],
+          "response_contains": ["Hassan Nasser", "1150.00"],
+          "expect_fallback": false
+        }
+      ]
+    },
+    {
+      "id": "LOWCONF-01",
+      "category": "low_confidence_clarification",
+      "description": "A vague message with no actionable content. The agent should either ask a clarifying question or fall back gracefully - it must NOT call any tool or fabricate information. This case is scored leniently (not counted toward tool-selection accuracy) because exact LLM phrasing/confidence varies.",
+      "user_name": "Maryline Karam",
+      "user_role": "student",
+      "lenient": true,
+      "turns": [
+        {
+          "message": "hmm, can you help me with that thing?",
+          "expected_intent": null,
+          "expected_tools": [],
+          "response_contains": [],
+          "expect_fallback": null,
+          "notes": "Acceptable outcomes: fallback with the policy refusal message, OR a clarifying question. Either way, no tool may be called and final_response must be non-empty."
+        }
+      ]
+    }
+  ]
+}
