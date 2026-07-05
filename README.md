@@ -603,11 +603,9 @@ Want to improve this project?
 
 ## 👥 Authors
 
-**Maryline Karam** — Database Design, Documentation, MongoDB Integration, Docker/Deployment (Phase 2)
-
-**Aseel Menhem** — SQL Implementation, LLM Core & LangGraph Orchestration (Phase 2)
-
-**Hana Tfaily** — Tools Layer, Streamlit UI, Evaluation Suite (Phase 2)
+* **Maryline Karam** — Database Design, Documentation, MongoDB Integration, Docker/Deployment (Phase 2)
+* **Aseel Menhem** — SQL Implementation, LLM Core & LangGraph Orchestration (Phase 2)
+* **Hana Tfaily** — Tools Layer, Streamlit UI, Evaluation Suite (Phase 2)
 ---
 
 ## 🙏 Acknowledgments
