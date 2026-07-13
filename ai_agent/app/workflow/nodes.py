@@ -131,6 +131,14 @@ def node_intent_classification(state: AgentState) -> AgentState:
 
     collected = dict(state.get("collected_information", {}))
     for key, value in entities.items():
+        # Some models return structured entities (e.g. planned_courses) as a
+        # JSON *string* instead of a list/dict - coerce before it reaches a
+        # tool's pydantic schema.
+        if isinstance(value, str) and value.strip()[:1] in ("[", "{"):
+            try:
+                value = json.loads(value)
+            except (ValueError, TypeError):
+                pass
         if value not in (None, "", [], {}):
             collected[key] = value
     state["collected_information"] = collected
@@ -160,6 +168,22 @@ def node_information_gathering(state: AgentState) -> AgentState:
 
     if intent == "payroll_report" and not collected.get("instructor_identifier") and role == "instructor" and user_name:
         collected["instructor_identifier"] = user_name
+
+    # Deterministic backstop: if the LLM classified an information_query but
+    # failed to extract query_type, infer it from unambiguous keywords in the
+    # latest message rather than bouncing a clarifying question back.
+    if intent == "information_query" and not collected.get("query_type"):
+        latest = (state.get("messages") or [{}])[-1].get("content", "").lower()
+        for kw, qt in (
+            ("policy", "policy"), ("policies", "policy"),
+            ("instructor", "instructor"), ("professor", "instructor"), ("dr.", "instructor"),
+            ("section", "section"), ("semester", "semester"),
+            ("department", "department"), ("program", "program"),
+            ("course", "course"),
+        ):
+            if kw in latest:
+                collected["query_type"] = qt
+                break
 
     state["collected_information"] = collected
     return state

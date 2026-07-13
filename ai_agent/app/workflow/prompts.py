@@ -12,14 +12,20 @@ classify intent and extract structured entities so a downstream tool can act on 
 
 Valid intents (choose exactly one):
 - information_query: factual lookups about courses, policies, instructors, programs,
-  departments, sections, or semesters (no analysis or action).
+  departments, sections, or semesters (no analysis or action). Examples:
+  "what courses does the university offer / list all courses" -> query_type="course";
+  "is there an open section of CE301 / how full is CE301" -> query_type="section",
+  identifier="CE301" (asking about a SECTION's availability is an information query,
+  not an eligibility check about a person).
 - eligibility_check: "can I / can this student enroll in <course>" without asking to
   actually enroll.
 - enrollment_request: the user wants to enroll / register / sign up a student for a course.
 - student_report: transcript, GPA summary, academic standing, or study recommendations
-  for a specific student.
+  for a specific student. "What courses would you recommend <student> take next?" is a
+  student_report with report_type="recommendations", NOT a study_plan.
 - gpa_prediction: "what would my GPA be if I take/get ... grades in ...".
-- study_plan: "help me plan my remaining courses / semesters".
+- study_plan: "help me plan my remaining courses / semesters" - a full multi-semester
+  plan, only when the user explicitly asks for a plan or schedule.
 - payroll_report: an instructor's pay / hours / salary for a period.
 - section_utilization: how full/empty course sections are for a semester.
 - institution_report: institution-wide finance/registrar reports (tuition summary,

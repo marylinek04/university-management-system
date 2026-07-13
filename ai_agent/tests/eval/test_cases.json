@@ -350,12 +350,12 @@
     {
       "id": "ER-02",
       "category": "enrollment_request_confirm_no_cancel",
-      "description": "Enrollment flow where the user declines the confirmation - no database changes should occur.",
+      "description": "Enrollment flow where the user declines the confirmation - no database changes should occur. (Message phrased as an explicit enrollment request; 'Can I enroll...' is by definition an eligibility_check.)",
       "user_name": "Aseel Menhem",
       "user_role": "student",
       "turns": [
         {
-          "message": "Can I enroll in CE410 for Spring 2026?",
+          "message": "Please enroll me in CE410 for Spring 2026.",
           "expected_intent": "enrollment_request",
           "expected_tools": [
             "analyze_enrollment_eligibility",
@@ -597,7 +597,7 @@
     {
       "id": "IR-01",
       "category": "institution_report_tuition_summary",
-      "description": "Institution-wide tuition/balance summary, including the low-balance flag.",
+      "description": "Institution tuition summary. Expected total reflects the shared eval DB state at this point in the run: 20500 seeded minus the 1200 CE205 fee deducted by ER-01's executed enrollment = 19300.",
       "user_name": "Maryline Karam",
       "user_role": "finance_officer",
       "turns": [
@@ -609,7 +609,7 @@
           ],
           "response_contains": [
             "Tuition",
-            "20500.00",
+            "19300.00",
             "Maryam Daaibes",
             "LOW BALANCE"
           ],
