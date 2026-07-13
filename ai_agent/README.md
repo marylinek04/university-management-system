@@ -29,7 +29,7 @@ This project does **not** redesign the underlying database. It adds a
 | **Hana Tfaily** (6554) | Platform & Interface (Student 3) | Memory layers (`app/memory/`), Streamlit UI, Docker packaging, trace logging, evaluation suite (`tests/eval/`), demo recording |
 
 Per-member setup guides and speaking scripts: `docs/team/`. Presentation
-materials: `docs/AI_Agent_Presentation.html`, `docs/SPEAKING_SCRIPTS.md`,
+materials: `docs/The_Transparent_Agent.pdf`, `docs/SPEAKING_SCRIPTS.md`,
 `docs/PRESENTATION_PLAN.md`, `docs/RECORDING_GUIDE.md`.
 
 ## Quick start (Docker - recommended)

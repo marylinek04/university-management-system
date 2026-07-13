@@ -6,10 +6,9 @@ this file wins. Slide numbers refer to `AI_Agent_Presentation.html`.
 The presentation itself is RECORDED (not live): record the deck narration
 over screen-captured slides, and splice Hana's demo recording in at slide 6.
 
-Flow: **Maryline** narrates slides 1-5 → slide 6 introduces the demo, then
-cut to the **demo recording** → **Aseel** narrates slides 7-10.
-Voice-over split for the demo footage itself: Part A = Maryline,
-Part B = Aseel, Part C = Hana (scripts below).
+Flow: **Maryline** narrates slides 1-5 → **Hana** introduces slide 6, then
+cut to the **demo recording**, which Hana narrates herself in her own
+words → **Aseel** narrates slides 7-10.
 
 ---
 
@@ -69,79 +68,54 @@ Part B = Aseel, Part C = Hana (scripts below).
 
 ### Slide 4 - The four required tools
 
-> The spec requires four tool categories; here they are. The information
-> tool does grounded lookups — courses, policies, instructors. Give it a
-> course code that doesn't exist and it returns found-false, never a guess.
-> The analysis tool checks enrollment eligibility with four deterministic
-> rules: prerequisites, section capacity, account balance, and duplicate
-> enrollment. Same input, same verdict, every time.
+> The specification includes four main tool categories.
 >
-> The action tool is the only one that changes the database, and it works in
-> two phases: a preview phase that writes nothing, and an execute phase that
-> only runs after the user explicitly confirms — and it re-validates before
-> writing. And the reporting tool builds transcripts, GPA summaries, and
-> recommendations. Every tool has a pydantic input schema, a typed output,
-> and defined error behavior. We also added five bonus tools — GPA
-> prediction, study planning, payroll, utilization, and institution reports.
+> The Information Tool performs grounded lookups for courses, policies, and
+> instructors. If a course code doesn't exist, it simply returns found:
+> false instead of guessing.
+>
+> The Analysis Tool checks enrollment eligibility using four deterministic
+> rules: prerequisites, section capacity, account balance, and duplicate
+> enrollment, so the same input always produces the same result.
+>
+> The Action Tool is the only tool that modifies the database. It first
+> provides a preview without making any changes, then executes only after
+> the user confirms, while validating everything again before writing.
+>
+> Finally, the Reporting Tool generates transcripts, GPA summaries, and
+> recommendations.
+>
+> All tools use Pydantic input schemas, typed outputs, and defined error
+> handling. We also implemented five bonus tools: GPA prediction, study
+> planning, payroll, utilization, and institution reports.
 
 ### Slide 5 - Why no RAG
 
-> You might ask: where's the vector database? There isn't one — on purpose.
-> Our domain knowledge is small, fully structured, and enumerable. For that,
-> exact SQL beats semantic search on every axis that matters here:
-> precision, reproducibility, auditability. An embedding can retrieve a
-> paragraph *about* fees; it can't join, sum, or re-validate a fee like a
-> row can.
+> You might wonder why we didn't use a vector database. The reason is
+> simple: our data is small, fully structured, and works best with SQL. It
+> gives us precise, reproducible, and auditable results.
 >
-> RAG becomes the right tool when the knowledge stops being structured — a
-> four-hundred-page academic handbook, free-text advising notes. Even then
-> it would complement our tools, not replace them: exact values stay in
-> structured form.
+> A vector database can retrieve information about fees, but it can't
+> reliably calculate, join, or validate fee records the way SQL can.
 >
-> Enough slides — let's see the agent in action. We recorded this in one
-> take, on one laptop, running fully offline in Docker: you'll see it answer
-> from the database, enroll one of us in a real course behind a confirmation
-> gate, refuse what it shouldn't do — and prove it with tests.
+> RAG becomes useful when the knowledge is unstructured, such as a large
+> academic handbook or free-text advising notes. Even then, it would
+> complement our tools rather than replace them, while structured data
+> remains in SQL.
 
-*(slide 6 stays up for that sentence, then cut to the demo recording)*
+*(Maryline ends here — Hana takes over on slide 6)*
 
----
+### Slide 6 - Demo introduction — HANA
 
-## DEMO VOICE-OVERS (over Hana's recording, ≈3 min total)
+> Enough with the slides — let's see the agent in action. I'm Hana, and
+> I'll walk you through a live demonstration running locally in Docker.
+> You'll see the agent answer questions from the database, safely process
+> an enrollment behind a confirmation step, refuse requests outside its
+> domain, and finish by running our evaluation suite, which verifies the
+> system's behavior across predefined test conversations, including safety
+> checks. One of the key metrics is zero unsafe actions.
 
-Names are dropped in naturally — no titles. Part A flows straight out of
-Maryline's slide-6 sentence; Aseel and Hana each say their name once when
-their part starts, so the audience knows whose voice they're hearing.
-
-### Part A — Maryline (~50 s)
-> Here's a grounded lookup: we ask about course CE410. Every value in the
-> reply — the credits, the eighteen-hundred fee, the prerequisite — comes
-> straight out of the database; the model only classified the question.
->
-> Next, the analysis tool. We ask whether Nour Hamad can enroll in CE410.
-> This is a deterministic rule engine — prerequisites, seat capacity,
-> account balance, duplicate enrollment. Nour is already enrolled, so the
-> answer is NOT eligible, with the exact reason. Same input, same verdict,
-> every time.
-
-### Part B — Aseel (~80 s)
-> Aseel here — now the part that actually changes the database. Hana asks
-> to enroll herself in CE410. Watch the workflow panel on the right: the
-> agent stops at CONFIRMATION REQUIRED. The action tool ran in preview
-> mode — nothing has been written yet.
->
-> Only her explicit "yes" executes it: eligibility is re-checked, the
-> enrollment is created, and the fee is deducted — you can see the new
-> balance, twenty-two hundred. When she asks to enroll again, re-validation
-> rejects it: no duplicate enrollment, no double charge.
->
-> An off-topic request — a flight to Paris — hits the fallback: the agent
-> states its limitation and offers a human instead of guessing. And "talk
-> to a human" files a traceable handoff ticket. That escalation path is a
-> regular expression, not the model — it works even if the AI is down.
-
-### Part C — Hana (~40 s)
-*(script below, inside her runbook — it starts with her name.)*
+*(slide 6 stays up for that, then cut to the demo recording)*
 
 ---
 
@@ -247,19 +221,6 @@ Notes: intent classification comes from a local llama3.1, so A1/A2/B1
 phrasing can vary slightly — the tool results and numbers are deterministic
 and will match exactly. If a reply takes 20-30 s, hold still; it gets
 trimmed or covered by narration.
-
-### Your voice-over (Part C of the video, ~40 s)
-
-> And this is Hana — everything you've been watching runs on my laptop.
-> Notice what I didn't do: I never told it who I am after switching my name
-> once. Short-term memory holds my session identity, so "my GPA" resolves to
-> me — three point five, Dean's List, straight from my grades in the
-> database. My transcript request reused the same identifier from the
-> previous turn — that's the working memory, and you can watch every field
-> of it in the side panel: intent, collected information, pending
-> confirmation, workflow state. Finally, the evaluation suite: thirty-five
-> conversations, ninety-four percent task completion — and zero unsafe
-> actions.
 
 ### If an examiner asks you (likely Q&A)
 - "What happens on restart?" → the database lives on a named volume, so my
