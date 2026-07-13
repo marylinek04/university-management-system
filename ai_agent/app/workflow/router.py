@@ -20,6 +20,13 @@ from .state import AgentState, INTENTS
 
 _YES_RE = re.compile(r"^\s*(yes|yeah|yep|yup|sure|confirm|confirmed|ok|okay|proceed|do it|go ahead)\b", re.I)
 _NO_RE = re.compile(r"^\s*(no|nope|cancel|don'?t|do not|stop|never\s*mind|nevermind)\b", re.I)
+# Deterministic detection of a request to reach a person (simulated human
+# handoff) - does not depend on the LLM, so the escalation path always works.
+_HANDOFF_RE = re.compile(
+    r"\b(talk|speak|connect|transfer|escalate|forward)\b.{0,30}\b(human|person|staff|someone|advisor|adviser|registrar)\b"
+    r"|\bhuman\s+(agent|help|support)\b|\bhand-?off\b|\breal\s+person\b",
+    re.I,
+)
 
 
 def _extract_json(text: str) -> dict:
@@ -46,6 +53,10 @@ def classify_intent(state: AgentState) -> tuple[str, float, dict]:
     no entities) when a ``pending_confirmation`` exists and the latest
     message is a clear yes/no reply - this avoids an unnecessary LLM call
     for the most safety-critical turn in the conversation.
+
+    Also short-circuits to ``human_handoff`` (confidence 1.0) when the user
+    explicitly asks to reach a person - the escalation path is deterministic
+    and never depends on the LLM being reachable.
     """
     messages = state.get("messages", [])
     latest = messages[-1]["content"] if messages else ""
@@ -55,6 +66,9 @@ def classify_intent(state: AgentState) -> tuple[str, float, dict]:
             return "confirm_yes", 1.0, {}
         if _NO_RE.match(latest):
             return "confirm_no", 1.0, {}
+
+    if _HANDOFF_RE.search(latest):
+        return "human_handoff", 1.0, {}
 
     history_text = "\n".join(f"{m['role']}: {m['content']}" for m in messages[-8:]) or "(none)"
 

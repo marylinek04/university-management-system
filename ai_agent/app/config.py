@@ -31,12 +31,37 @@ def _env_bool(name: str, default: bool = False) -> bool:
 
 def _env_int(name: str, default: int) -> int:
     val = os.getenv(name)
-    if val is None or val == "":
+    if val is None or val.strip() == "":
         return default
     try:
         return int(val)
     except ValueError:
         return default
+
+
+def _env_float(name: str, default: float) -> float:
+    val = os.getenv(name)
+    if val is None or val.strip() == "":
+        return default
+    try:
+        return float(val)
+    except ValueError:
+        return default
+
+
+def _env_str(name: str, default: str) -> str:
+    """Like os.getenv, but treats a BLANK value as unset.
+
+    .env.example ships several intentionally-blank lines (e.g. ``LLM_MODEL=``
+    meaning "use the per-provider default"). ``os.getenv(name, default)``
+    would return that empty string instead of the default, which previously
+    caused ChatOllama to be constructed with ``model=""`` and fail with
+    "model must be specified".
+    """
+    val = os.getenv(name)
+    if val is None or val.strip() == "":
+        return default
+    return val.strip()
 
 
 # ---------------------------------------------------------------------------
@@ -47,7 +72,7 @@ def _env_int(name: str, default: int) -> int:
 # Ollama is the standard execution path for development, testing, and
 # evaluation. OpenAI/Anthropic are only used if explicitly selected here
 # AND the matching *_API_KEY is set - they are never required.
-LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama").strip().lower()
+LLM_PROVIDER = _env_str("LLM_PROVIDER", "ollama").lower()
 
 # Default models per provider; overridable via LLM_MODEL
 _DEFAULT_MODELS = {
@@ -55,13 +80,14 @@ _DEFAULT_MODELS = {
     "anthropic": "claude-3-5-haiku-20241022",
     "ollama": "llama3.1",
 }
-LLM_MODEL = os.getenv("LLM_MODEL", _DEFAULT_MODELS.get(LLM_PROVIDER, "gpt-4o-mini"))
+# Blank/unset LLM_MODEL means "use the per-provider default" (see .env.example).
+LLM_MODEL = _env_str("LLM_MODEL", _DEFAULT_MODELS.get(LLM_PROVIDER, "llama3.1"))
 
-LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.1"))
+LLM_TEMPERATURE = _env_float("LLM_TEMPERATURE", 0.1)
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
-OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+OLLAMA_BASE_URL = _env_str("OLLAMA_BASE_URL", "http://localhost:11434")
 
 # ---------------------------------------------------------------------------
 # Database (Layer 6 - data layer)
@@ -83,12 +109,12 @@ CONFIRMATION_REQUIRED_TOOLS = {"create_enrollment_request"}
 # Minimum confidence (0-1) the intent router must have before acting on a
 # classified intent. Below this, the workflow falls back to a clarification
 # or "unsupported request" response.
-INTENT_CONFIDENCE_THRESHOLD = float(os.getenv("INTENT_CONFIDENCE_THRESHOLD", "0.4"))
+INTENT_CONFIDENCE_THRESHOLD = _env_float("INTENT_CONFIDENCE_THRESHOLD", 0.4)
 
 # ---------------------------------------------------------------------------
 # Logging
 # ---------------------------------------------------------------------------
-LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+LOG_LEVEL = _env_str("LOG_LEVEL", "INFO").upper()
 
 # ---------------------------------------------------------------------------
 # Long-term memory (bonus)

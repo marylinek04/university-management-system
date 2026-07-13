@@ -6,4 +6,7 @@ __pycache__/
 *.db-wal
 *.db-shm
 .venv/
-tests/eval/eval_report.json
+~$*
+# NOTE: tests/eval/eval_report.json is intentionally NOT ignored - the final
+# report (generated with a live LLM via `python -m tests.eval.run_eval`) is a
+# required deliverable and must be committed with the submission.

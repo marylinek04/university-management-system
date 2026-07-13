@@ -30,13 +30,11 @@ NOTE on LLM configuration: intent classification (Layer 3) requires a
 reachable LLM provider (see app/config.py / .env). The default provider is
 "ollama" (no API key needed) - it just needs an Ollama server reachable at
 OLLAMA_BASE_URL (e.g. ``docker compose up ollama ollama-pull``, or a local
-``ollama serve`` with the model pulled). If the configured provider
-(ollama or an optional OpenAI/Anthropic fallback) is unreachable/misconfigured,
-``classify_intent`` swallows the error and returns intent="unsupported" with
-confidence 0.0, which routes every non yes/no turn to the fallback node. The
-eval will still run to completion in that case, but most non-lenient cases
-will fail - this is expected and the script prints a warning up front so it
-isn't mistaken for a bug in the agent itself.
+``ollama serve`` with the model pulled). If the configured provider is
+unreachable/misconfigured, the eval ABORTS: without a live LLM every turn is
+routed to the fallback node and the report is meaningless. Override with
+``--allow-no-llm`` only to debug the runner itself - never commit or submit
+a report produced that way.
 """
 
 from __future__ import annotations
@@ -79,7 +77,7 @@ def _ollama_reachable(base_url: str, timeout: float = 3.0) -> bool:
     construction always succeeds even if no server is listening at
     OLLAMA_BASE_URL. The real failure only happens later, inside
     classify_intent's try/except, where it is silently swallowed. So for
-    ollama we proactively probe the server here to give an accurate warning.
+    ollama we proactively probe the server here.
     """
     import urllib.request
 
@@ -90,8 +88,14 @@ def _ollama_reachable(base_url: str, timeout: float = 3.0) -> bool:
         return False
 
 
-def preflight_llm_check() -> None:
-    """Warn (but don't abort) if the configured LLM provider can't be reached."""
+def preflight_llm_check() -> bool:
+    """Return True if the configured LLM provider is reachable.
+
+    If it is not, the eval ABORTS by default (see main): running without a
+    live LLM sends every turn to the fallback node and produces a garbage
+    report that must never be committed or submitted. Use --allow-no-llm to
+    override (debugging the runner itself only).
+    """
     provider = config.LLM_PROVIDER
 
     if provider == "ollama":
@@ -100,23 +104,22 @@ def preflight_llm_check() -> None:
                 f"Ollama reachable at {config.OLLAMA_BASE_URL} (model: "
                 f"{config.LLM_MODEL}) - intent classification will use the live model.\n"
             )
-        else:
-            print(
-                f"WARNING: Ollama is not reachable at {config.OLLAMA_BASE_URL}.\n"
-                "Intent classification will fail on every turn, so classify_intent will\n"
-                "return intent='unsupported' with confidence 0.0 and every non yes/no\n"
-                "turn will be routed to the fallback (safety) node. The eval will still\n"
-                "run, but most non-lenient cases will fail for that reason - this is\n"
-                "expected, not an agent bug.\n"
-                "Fix: start Ollama and pull the model, e.g.\n"
-                "  docker compose up ollama ollama-pull   (Docker)\n"
-                "  ollama serve  &&  ollama pull "
-                f"{config.LLM_MODEL or 'llama3.1'}   (local install)\n"
-                "Ollama is the default provider and needs NO API key - OpenAI/Anthropic\n"
-                "are optional fallbacks only (set LLM_PROVIDER + the matching *_API_KEY\n"
-                "in .env if you want to use one of those instead).\n"
-            )
-        return
+            return True
+        print(
+            f"ERROR: Ollama is not reachable at {config.OLLAMA_BASE_URL}.\n"
+            "Without a live LLM, intent classification fails on every turn, every\n"
+            "case is routed to the fallback node, and the resulting report is\n"
+            "meaningless - so the eval will NOT run.\n"
+            "Fix: start Ollama and pull the model, e.g.\n"
+            "  docker compose up ollama ollama-pull   (Docker)\n"
+            "  ollama serve  &&  ollama pull "
+            f"{config.LLM_MODEL or 'llama3.1'}   (local install)\n"
+            "Ollama is the default provider and needs NO API key - OpenAI/Anthropic\n"
+            "are optional fallbacks only (set LLM_PROVIDER + the matching *_API_KEY\n"
+            "in .env if you want to use one of those instead).\n"
+            "(To force a run anyway for runner debugging: --allow-no-llm)\n"
+        )
+        return False
 
     # OpenAI / Anthropic (optional fallback providers): get_chat_model()
     # raises LLMConfigurationError immediately if the API key is missing.
@@ -126,17 +129,16 @@ def preflight_llm_check() -> None:
             f"LLM provider '{provider}' configured OK - intent classification "
             "will use the live model.\n"
         )
+        return True
     except LLMConfigurationError as exc:
         print(
-            "WARNING: LLM is not configured (" + str(exc) + ")\n"
-            "Intent classification will fail on every turn, so classify_intent will\n"
-            "return intent='unsupported' with confidence 0.0 and every non yes/no\n"
-            "turn will be routed to the fallback (safety) node. The eval will still\n"
-            "run, but most non-lenient cases will fail for that reason - this is\n"
-            "expected, not an agent bug.\n"
-            f"'{provider}' is an OPTIONAL fallback provider - either fix its API key in\n"
-            ".env, or set LLM_PROVIDER=ollama (the default, no API key required).\n"
+            "ERROR: LLM is not configured (" + str(exc) + ")\n"
+            "Without a live LLM the eval report is meaningless, so the eval will\n"
+            f"NOT run. '{provider}' is an OPTIONAL fallback provider - either fix its\n"
+            "API key in .env, or set LLM_PROVIDER=ollama (the default, no API key\n"
+            "required). (To force a run anyway for runner debugging: --allow-no-llm)\n"
         )
+        return False
 
 
 def _check_response_contains(final_response: str, fragments: list[str]) -> dict[str, bool]:
@@ -265,7 +267,9 @@ def compute_metrics(results: list[dict]) -> dict:
 
 
 def main() -> None:
-    preflight_llm_check()
+    llm_ok = preflight_llm_check()
+    if not llm_ok and "--allow-no-llm" not in sys.argv:
+        sys.exit(1)
 
     build_database(force=True, seed=True)
     print(f"Isolated eval database built at: {EVAL_DB_PATH}\n")

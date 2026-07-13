@@ -36,7 +36,12 @@ from ..tools import (
 from .router import classify_intent
 from .state import AgentState, INTENT_REQUIRED_FIELDS
 
-FALLBACK_MESSAGE = "I cannot perform that action because it is outside my supported university operations domain."
+FALLBACK_MESSAGE = (
+    "I cannot perform that action because it is outside my supported university "
+    "operations domain, and I won't guess an answer. If you'd like, I can forward "
+    "your request to university staff - just say 'talk to a human' and I'll create "
+    "a handoff ticket for you."
+)
 
 
 # ---------------------------------------------------------------------------
@@ -278,6 +283,33 @@ def node_report_generation(state: AgentState) -> AgentState:
 
     intent = state.get("current_intent")
     collected = state.get("collected_information", {})
+
+    if intent == "human_handoff":
+        # Simulated human-handoff path (project spec, Section 7): create a
+        # traceable ticket in agent_logs and tell the user what happens next.
+        # Deterministic - no LLM or external system involved.
+        from datetime import datetime, timezone
+
+        ticket_ref = "HANDOFF-" + datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+        last_user_msgs = [m["content"] for m in state.get("messages", []) if m["role"] == "user"][-3:]
+        result = {
+            "status": "handoff_created",
+            "ticket_ref": ticket_ref,
+            "message": (
+                f"I've created handoff ticket {ticket_ref} and forwarded your request to "
+                "university staff (simulated). A staff member would review the conversation "
+                "and follow up with you. Is there anything else I can help with in the meantime?"
+            ),
+        }
+        _record_tool_call(
+            state,
+            "create_handoff_ticket",
+            {"ticket_ref": ticket_ref, "recent_user_messages": last_user_msgs},
+            result,
+        )
+        state["latest_tool_result"] = result
+        state["final_response"] = result["message"]
+        return state
 
     if intent == "information_query":
         tool_input = {

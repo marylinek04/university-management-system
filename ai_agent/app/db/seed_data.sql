@@ -8,7 +8,7 @@
 --   - a student with insufficient balance for a course fee     -> Maryam / Karim
 --   - a duplicate enrollment attempt                            -> Nour
 --   - a missing-prerequisite attempt                            -> Yousef
---   - a clean, fully-eligible enrollment                        -> Aseel
+--   - a clean, fully-eligible enrollment                        -> Aseel / Hana
 -- =====================================================================
 
 PRAGMA foreign_keys = ON;
@@ -31,6 +31,7 @@ INSERT INTO users (user_id, role_id, username, email, password_hash, full_name) 
  (4, 1, 'nour.hamad',     'nour.student@uni.edu',    'demo_hash', 'Nour Hamad'),
  (5, 1, 'karim.saleh',    'karim.student@uni.edu',   'demo_hash', 'Karim Saleh'),
  (6, 1, 'yousef.khalil',  'yousef.student@uni.edu',  'demo_hash', 'Yousef Khalil'),
+ (13, 1, 'hana.tfaily',   'hana.student@uni.edu',    'demo_hash', 'Hana Tfaily'),
  (7, 2, 'hassan.nasser',  'hassan.nasser@uni.edu',   'demo_hash', 'Dr. Hassan Nasser'),
  (8, 2, 'rami.fakhoury',  'rami.fakhoury@uni.edu',   'demo_hash', 'Dr. Rami Fakhoury'),
  (9, 2, 'maya.saad',      'maya.saad@uni.edu',       'demo_hash', 'Dr. Maya Saad'),
@@ -87,7 +88,8 @@ INSERT INTO students (student_id, user_id, first_name, last_name, email, status,
  (3, 3, 'Maryam',   'Daaibes',  'maryam.student@uni.edu',  'Active', 2.5,  1),
  (4, 4, 'Nour',     'Hamad',    'nour.student@uni.edu',    'Active', 4.0,  1),
  (5, 5, 'Karim',    'Saleh',    'karim.student@uni.edu',   'Active', 3.67, 1),
- (6, 6, 'Yousef',   'Khalil',   'yousef.student@uni.edu',  'Active', NULL, 1);
+ (6, 6, 'Yousef',   'Khalil',   'yousef.student@uni.edu',  'Active', NULL, 1),
+ (7, 13, 'Hana',    'Tfaily',   'hana.student@uni.edu',    'Active', 3.5,  1);
 
 -- ---------------------------------------------------------------
 -- Instructors & Salaries
@@ -141,7 +143,9 @@ INSERT INTO enrollments (enrollment_id, student_id, section_id, enrollment_date,
  (10, 5, 4, '2025-02-05', 'COMPLETED'),  -- Karim    CV220 Spring25 -> B
  -- Current-semester (Spring 2026) enrollments
  (11, 4, 5, '2026-02-10', 'ENROLLED'),   -- Nour enrolled in CE301 (fills the 1-seat section -> FULL)
- (12, 4, 6, '2026-02-10', 'ENROLLED');   -- Nour already enrolled in CE410 (duplicate-enrollment test)
+ (12, 4, 6, '2026-02-10', 'ENROLLED'),   -- Nour already enrolled in CE410 (duplicate-enrollment test)
+ (13, 7, 1, '2024-09-05', 'COMPLETED'),  -- Hana     CE205 Fall24 -> A
+ (14, 7, 3, '2025-02-05', 'COMPLETED');  -- Hana     CE301 Spring25 -> B (prereqs done: eligible for CE410)
 
 INSERT INTO grades (enrollment_id, grade_value, grade_status) VALUES
  (1, 'A', 'Locked'),
@@ -153,7 +157,9 @@ INSERT INTO grades (enrollment_id, grade_value, grade_status) VALUES
  (7, 'A', 'Locked'),
  (8, 'A', 'Locked'),
  (9, 'A', 'Locked'),
- (10, 'B', 'Locked');
+ (10, 'B', 'Locked'),
+ (13, 'A', 'Locked'),
+ (14, 'B', 'Locked');
 
 -- ---------------------------------------------------------------
 -- Student Accounts & Payments
@@ -163,6 +169,7 @@ INSERT INTO grades (enrollment_id, grade_value, grade_status) VALUES
 --   Nour:     5000
 --   Karim:    1000 (insufficient for CE410 fee 1800)
 --   Yousef:   5000 (sufficient balance, but missing CE301 prereq for CE410/CE301)
+--   Hana:     4000 (prereqs complete -> fully eligible for CE410, fee 1800)
 -- ---------------------------------------------------------------
 INSERT INTO student_accounts (student_id, balance) VALUES
  (1, 3000),
@@ -170,7 +177,8 @@ INSERT INTO student_accounts (student_id, balance) VALUES
  (3, 500),
  (4, 5000),
  (5, 1000),
- (6, 5000);
+ (6, 5000),
+ (7, 4000);
 
 INSERT INTO student_payments (student_id, amount, payment_date, description) VALUES
  (1, 4500, '2024-09-01 10:00:00', 'Tuition payment - Fall 2024 & Spring 2025'),
@@ -178,7 +186,8 @@ INSERT INTO student_payments (student_id, amount, payment_date, description) VAL
  (3, 2000, '2024-09-01 10:10:00', 'Tuition payment - Fall 2024'),
  (4, 7000, '2024-09-01 10:15:00', 'Tuition payment - Fall 2024 & Spring 2025'),
  (5, 4000, '2024-09-01 10:20:00', 'Tuition payment - Fall 2024 & Spring 2025'),
- (6, 5000, '2026-01-15 09:00:00', 'Tuition deposit - Spring 2026');
+ (6, 5000, '2026-01-15 09:00:00', 'Tuition deposit - Spring 2026'),
+ (7, 4000, '2026-01-20 09:00:00', 'Tuition deposit - Spring 2026');
 
 -- ---------------------------------------------------------------
 -- Instructor time entries (for payroll / workload tools)

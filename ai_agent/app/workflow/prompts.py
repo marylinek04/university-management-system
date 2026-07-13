@@ -24,6 +24,8 @@ Valid intents (choose exactly one):
 - section_utilization: how full/empty course sections are for a semester.
 - institution_report: institution-wide finance/registrar reports (tuition summary,
   payroll summary across all instructors, enrollment overview).
+- human_handoff: the user explicitly asks to talk to a human, staff member, advisor,
+  or real person, or asks for their request to be forwarded/escalated to staff.
 - unsupported: anything outside university academic/administrative operations
   (e.g. weather, general chit-chat unrelated to the university, requests to change
   system settings, requests for information the agent has no tool for).
