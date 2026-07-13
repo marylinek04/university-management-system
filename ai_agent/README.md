@@ -20,6 +20,18 @@ This project does **not** redesign the underlying database. It adds a
 4. **Tools** - 4 required tools + 5 bonus tools, all grounded in the SQLite
    database and a structured policy file (no vector DB / RAG / embeddings).
 
+## Team
+
+| Member | Role | Owns |
+| --- | --- | --- |
+| **Maryline Karam** (6599) | Tools Engineer (Student 1) | The 9 typed tools (`app/tools/`), pydantic validation, database schema additions, seed data, `policies.json` |
+| **Aseel Menhem** (6651) | Agent Engineer (Student 2) | LangGraph workflow & router (`app/workflow/`), prompts, confirmation gate, stopping rules, fallback & human-handoff logic |
+| **Hana Tfaily** (6554) | Platform & Interface (Student 3) | Memory layers (`app/memory/`), Streamlit UI, Docker packaging, trace logging, evaluation suite (`tests/eval/`), demo recording |
+
+Per-member setup guides and speaking scripts: `docs/team/`. Presentation
+materials: `docs/AI_Agent_Presentation.html`, `docs/SPEAKING_SCRIPTS.md`,
+`docs/PRESENTATION_PLAN.md`, `docs/RECORDING_GUIDE.md`.
+
 ## Quick start (Docker - recommended)
 
 ```bash
@@ -96,7 +108,7 @@ ai_agent/
 │       └── logger.py             # AgentLogger -> agent_logs SQLite table
 ├── streamlit_app.py             # Layer 1 - chat UI
 ├── tests/eval/                  # Evaluation suite (see tests/eval/README.md)
-│   ├── test_cases.json           # 31 test conversations across 30 categories
+│   ├── test_cases.json           # 35 test conversations across 34 categories
 │   ├── run_eval.py                # Runner - computes the 4 required metrics
 │   └── README.md
 ├── docs/

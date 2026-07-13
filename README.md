@@ -2,8 +2,8 @@
 
 A complete university operations platform — from the core SQL Server database all the way up to an AI-powered chat agent that students and staff can talk to directly.
 
-> **Phase 1**: SQL Server + T-SQL + MongoDB — relational database, stored procedures, triggers, security  
-> **Phase 2**: AI Agent Layer — conversational agent built on LangGraph + Streamlit + Ollama (local LLM, no API key required)
+> **Phase 1**: SQL Server + T-SQL + MongoDB — relational database, stored procedures, triggers, security — *built by Maryline Karam & Aseel Menhem*
+> **Phase 2**: AI Agent Layer — conversational agent built on LangGraph + Streamlit + Ollama (local LLM, no API key required) — *Hana Tfaily joined the team for this phase*
 >
 > **Made by**: Maryline Karam · Aseel Menhem · Hana Tfaily
 
@@ -12,6 +12,7 @@ A complete university operations platform — from the core SQL Server database 
 ## 📖 What is This?
 
 This is a full university database that handles:
+
 - 👨‍🎓 Student enrollment and grades
 - 👨‍🏫 Instructor assignments and payroll
 - 📚 Course management and scheduling
@@ -84,63 +85,55 @@ User → Student → Enrollment → Grade
                     Instructor → SalaryPayment
 ```
 
+Full visual reference: [ERD diagram](docs/ERD_diag_UMS.png) · [Use-case diagram](docs/USE_CASE_UMS.png)
+
 ---
 
 ## 📊 Data Visualizations (MongoDB Charts)
 
-We created interactive dashboards to visualize the data:
-
 To support data-driven decision-making, several analytical dashboards were created using MongoDB Charts. These visualizations provide clear insights into the university's financial status, faculty workload, and course utilization, transforming raw operational data into meaningful management information.
 
-Static snapshots of the charts are included below for documentation purposes, while the live dashboards allow real-time interaction during demonstrations.
+Static snapshots are included for documentation; the live dashboards allow real-time interaction during demonstrations.
 
-### Student Tuition Collection Status
+### [Student Tuition Collection Status](docs/charts/student_tuition_collection.png)
+Compares paid balances against outstanding tuition fees for a quick overview of cash flow.
+**Key Insight:** the finance office can immediately identify unpaid balances, assess financial exposure, and prioritize collection efforts.
 
-This visualization presents the financial status of student accounts by comparing paid balances against outstanding tuition fees, offering a quick overview of the university's cash flow.
+### [Instructor Workload Analysis](docs/charts/instructor_workload_analysis.png)
+Summarizes total teaching hours logged by each instructor, based on approved time entries.
+**Key Insight:** department heads can ensure fairness, detect overload, and validate hours before salary processing.
 
-**Key Insight:**  
-The chart allows the finance office to immediately identify unpaid balances, assess financial exposure, and prioritize collection efforts, reducing institutional financial risk.
+### [Course Utilization (Capacity vs. Enrollment)](docs/charts/course_utilization.png)
+Compares section capacity against actual enrollment to evaluate resource use.
+**Key Insight:** highlights underutilized sections and fully booked classes for better planning.
 
-### Instructor Workload Analysis
-
-This chart summarizes the total teaching hours logged by each instructor, based on approved time entries.
-
-**Key Insight:**  
-By visualizing workload distribution, department heads can ensure fairness, detect overload situations, and validate teaching hours before salary processing.
-
-### Course Utilization (Capacity vs. Enrollment)
-
-This visualization compares section capacity against actual student enrollment to evaluate how efficiently academic resources are being used.
-
-**Key Insight:**  
-The chart highlights underutilized sections and fully booked classes, supporting better planning of future course offerings and classroom allocation.
-
-📎 All visualization images and supporting diagrams are available in the project documentation attachments.
+MongoDB playground: [`mongodb/university_management_playground.mongodb.js`](mongodb/university_management_playground.mongodb.js)
 
 ---
 
-## 🤖 Phase 2 — AI Agent Layer (`ai_agent/`)
+## 🤖 Phase 2 — AI Agent Layer ([`ai_agent/`](ai_agent/))
 
 On top of the database we built a full AI agent that lets students and staff interact with the university system through natural language.
 
 ### What the agent can do
-
 - Answer questions about courses, policies, programs, and academic rules
-- Check whether a student is eligible to enroll in a course (GPA, prerequisites, capacity, balance)
+- Check whether a student is eligible to enroll in a course (prerequisites, capacity, balance, duplicates)
 - Submit an enrollment request — gated behind a confirmation step so nothing mutates by accident
+- Refuse out-of-domain requests and escalate to a (simulated) human with a traceable handoff ticket
 - Generate student transcripts, institution-wide reports, payroll summaries, and study plans
 - Predict future GPA and analyze section utilization
 
-### Architecture (6 layers)
+### Architecture (7 layers)
 
 ```
 Layer 1 — Streamlit chat UI           (streamlit_app.py)
-Layer 2 — LangGraph state machine     (app/workflow/)  ← 9 nodes, intent → ... → finalize
+Layer 2 — LangGraph state machine     (app/workflow/)  ← intent → gather → validate → analyze → confirm → execute → report (+ fallback)
 Layer 3 — Configurable LLM            (app/llm/client.py)
            Ollama (default, local, no API key) | OpenAI / Anthropic (optional fallback)
-Layer 4 — 9 tools                     (app/tools/)     ← all grounded in the database
-Layer 5 — Memory                      (app/memory/)    ← short-term, working, long-term
-Layer 6 — SQLite database             (app/db/)        ← same schema as Phase 1
+Layer 4 — 9 typed tools               (app/tools/)     ← all grounded in the database
+Layer 5 — Memory                      (app/memory/)    ← short-term, working, long-term (bonus)
+Layer 6 — SQLite database             (app/db/)        ← same schema as Phase 1 + policies.json
+Layer 7 — Container                   (Dockerfile, docker-compose.yml) ← one-command startup
 ```
 
 ### Quickstart (Docker — recommended)
@@ -163,7 +156,7 @@ python -m app.db.init_db
 streamlit run streamlit_app.py
 ```
 
-See [`ai_agent/README.md`](ai_agent/README.md) for full setup details, environment variables, and evaluation suite instructions.
+See [`ai_agent/README.md`](ai_agent/README.md) for full setup details, environment variables, and the evaluation suite (35 documented test conversations, incl. prompt-injection and confirmation-bypass attempts).
 
 ---
 
@@ -177,24 +170,21 @@ See [`ai_agent/README.md`](ai_agent/README.md) for full setup details, environme
 ### Quick Setup
 
 **Step 1: Run the SQL scripts in order**
-```sql
--- Open SSMS and run these files:
-1. sql/01_initialization.sql  -- Creates database
-2. sql/02_tables.sql          -- Creates tables
-3. sql/03_security.sql        -- Sets up users and roles
-4. sql/04_views.sql           -- Creates views
-5. sql/05_functions.sql       -- Creates functions
-6. sql/06_procedures.sql      -- Creates stored procedures
-7. sql/07_triggers.sql        -- Creates triggers
-8. sql/08_sample_data.sql     -- Loads test data
-```
+
+1. [`sql/01_initialization.sql`](sql/01_initialization.sql) — Creates database
+2. [`sql/02_tables.sql`](sql/02_tables.sql) — Creates tables
+3. [`sql/03_security.sql`](sql/03_security.sql) — Sets up users and roles
+4. [`sql/04_views.sql`](sql/04_views.sql) — Creates views
+5. [`sql/05_functions.sql`](sql/05_functions.sql) — Creates functions
+6. [`sql/06_procedures.sql`](sql/06_procedures.sql) — Creates stored procedures
+7. [`sql/07_triggers.sql`](sql/07_triggers.sql) — Creates triggers
+8. [`sql/08_sample_data.sql`](sql/08_sample_data.sql) — Loads test data
+9. [`sql/10_permissions.sql`](sql/10_permissions.sql) — Grants role permissions
 
 **Step 2: Verify it works**
-```sql
--- Run test scripts
-:r sql/09_test_scripts.sql
 
--- Check if data loaded
+```sql
+:r sql/09_test_scripts.sql      -- run the test suite
 SELECT * FROM Student;
 SELECT * FROM Course;
 SELECT * FROM Enrollment;
@@ -210,7 +200,7 @@ SELECT * FROM Enrollment;
 
 ```sql
 -- First, make sure student has money
-EXEC usp_RegisterStudentPayment 
+EXEC usp_RegisterStudentPayment
     @StudentFullName = 'John Doe',
     @Amount = 2000,
     @ProcessedByUserID = 1;
@@ -219,7 +209,7 @@ EXEC usp_RegisterStudentPayment
 SELECT dbo.fn_GetStudentBalance('John Doe');
 
 -- Enroll in course
-EXEC usp_EnrollStudent 
+EXEC usp_EnrollStudent
     @StudentName = 'John Doe',
     @CourseCode = 'CE301',
     @SemesterName = 'Fall 2024';
@@ -231,12 +221,9 @@ EXEC usp_EnrollStudent
 3. Enrollment is created
 4. $1,500 is deducted from balance
 
----
-
 ### Example 2: Submit a Grade
 
 ```sql
--- Instructor submits grade
 EXEC usp_SetStudentGrade
     @InstructorID = 3,           -- Dr. Maya Saad
     @StudentID = 1,              -- John Doe
@@ -251,22 +238,15 @@ EXEC usp_SetStudentGrade
 3. Saves grade
 4. **Automatically recalculates student's GPA!**
 
----
-
 ### Example 3: View Transcript
 
 ```sql
--- Student logs in to see grades
 EXEC usp_GetMyTranscript
     @username = 'john.doe',
     @password = 'hashed_password';
 ```
 
-**Returns:**
-- Student info and current GPA
-- All courses taken
-- Grades received
-- Total credits earned
+**Returns:** student info and current GPA, all courses taken, grades received, total credits earned.
 
 ---
 
@@ -297,45 +277,33 @@ GRANT EXECUTE ON usp_RegisterStudentPayment TO role_finance;
 GRANT EXECUTE ON GenerateInstructorPayroll TO role_finance;
 ```
 
-No one can access tables directly - everything goes through controlled procedures!
+No one can access tables directly — everything goes through controlled procedures! Full grants: [`sql/03_security.sql`](sql/03_security.sql) and [`sql/10_permissions.sql`](sql/10_permissions.sql).
+
+The AI agent applies the same philosophy one layer up: the LLM never touches the database directly — every read/write goes through a typed, validated tool, and the only state-changing tool is gated behind explicit user confirmation.
 
 ---
 
 ## 🤖 Automated Features
 
 ### 1. Automatic GPA Calculation
-When any grade changes:
-- Trigger fires automatically
-- Recalculates weighted average
-- Updates student's GPA
-- No manual calculation needed!
+When any grade changes: trigger fires, recalculates the weighted average, updates the student's GPA — no manual calculation.
 
 ### 2. Capacity Enforcement
-When enrolling a student:
-- Trigger checks current enrollment count
-- Compares to section capacity
-- **Rejects** if class is full
-- Prevents overbooking!
+When enrolling: trigger checks the enrollment count against section capacity and **rejects** if the class is full.
 
 ### 3. Account Creation
-When creating a new student user:
-- Trigger automatically creates Student record
-- Trigger automatically creates StudentAccount
-- Starts with $0 balance
-- Ready to go!
+Creating a new student user automatically creates the Student record and StudentAccount ($0 balance).
 
 ### 4. Balance Updates
-When processing a payment:
-- Trigger automatically updates balance
-- No manual balance tracking
-- Always accurate!
+Processing a payment automatically updates the balance — always accurate.
+
+All triggers: [`sql/07_triggers.sql`](sql/07_triggers.sql)
 
 ---
 
 ## 📊 The Numbers
 
-What's inside:
-
+**Phase 1**
 - **15 Tables** with proper relationships
 - **10 Stored Procedures** for business logic
 - **6 Functions** for calculations
@@ -343,118 +311,89 @@ What's inside:
 - **3 Views** for reporting
 - **6 User Roles** with security
 - **2,500+ lines** of SQL code
-- **100% compatibility** between design and code
+
+**Phase 2**
+- **9 typed tools** (4 required + 5 bonus), all grounded in the database
+- **Explicit LangGraph state machine** with confirmation gate, stopping rules, fallback, and human handoff
+- **3 memory layers** (short-term, working, long-term bonus)
+- **35 documented test conversations** across 34 categories, 4 required metrics, 0 unsafe actions
+- **One-command Docker startup**, fully offline, no API keys
 
 ---
 
 ## 🗂️ Project Files
 
-```
-university-management-system/
-│
-├── sql/                              ← Phase 1: All SQL Server code
-│   ├── 01_initialization.sql         ← Start here
-│   ├── 02_tables.sql
-│   ├── 03_security.sql
-│   ├── 04_views.sql
-│   ├── 05_functions.sql
-│   ├── 06_procedures.sql
-│   ├── 07_triggers.sql
-│   ├── 08_sample_data.sql
-│   └── 09_test_scripts.sql           ← Test everything
-│
-├── mongodb/                          ← NoSQL version + analytics
-│   └── university_management_playground.mongodb.js
-│
-├── docs/                             ← Phase 1 diagrams & charts
-│   ├── ERD_diag_UMS.png
-│   ├── USE_CASE_UMS.png
-│   └── charts/
-│
-└── ai_agent/                         ← Phase 2: AI Agent Layer
-    ├── docker-compose.yml             ← one-command startup
-    ├── Dockerfile
-    ├── streamlit_app.py               ← Layer 1: chat UI
-    ├── requirements.txt
-    ├── app/
-    │   ├── config.py                  ← all settings via env vars
-    │   ├── llm/client.py              ← Layer 3: Ollama / OpenAI / Anthropic
-    │   ├── workflow/                  ← Layer 2: LangGraph state machine
-    │   ├── tools/                     ← Layer 4: 9 grounded tools
-    │   ├── memory/                    ← Layer 5: short/working/long-term
-    │   └── db/                        ← Layer 6: SQLite + policies
-    ├── tests/eval/                    ← evaluation suite (31 test cases)
-    └── docs/
-        ├── HUMAN_GUIDE.md             ← full architecture + demo guide
-        ├── OPERATIONS_GUIDE.md        ← setup & ops reference
-        ├── TECHNICAL_REPORT.md        ← design rationale & limitations
-        ├── PRESENTATION_TEAM.pdf      ← team presentation slides
-        └── PRESENTATION_INTRO.pdf     ← intro deck
-```
+**Phase 1 — SQL Server** ([`sql/`](sql/))
+- [`01_initialization.sql`](sql/01_initialization.sql) · [`02_tables.sql`](sql/02_tables.sql) · [`03_security.sql`](sql/03_security.sql) · [`04_views.sql`](sql/04_views.sql) · [`05_functions.sql`](sql/05_functions.sql)
+- [`06_procedures.sql`](sql/06_procedures.sql) · [`07_triggers.sql`](sql/07_triggers.sql) · [`08_sample_data.sql`](sql/08_sample_data.sql) · [`09_test_scripts.sql`](sql/09_test_scripts.sql) · [`10_permissions.sql`](sql/10_permissions.sql)
+
+**MongoDB** ([`mongodb/`](mongodb/))
+- [`university_management_playground.mongodb.js`](mongodb/university_management_playground.mongodb.js) — NoSQL version + analytics
+
+**Phase 1 docs** ([`docs/`](docs/))
+- [`ERD_diag_UMS.png`](docs/ERD_diag_UMS.png) · [`USE_CASE_UMS.png`](docs/USE_CASE_UMS.png) · [`Presentation_Slides.pdf`](docs/Presentation_Slides.pdf) · [charts/](docs/charts/)
+- [`Project_proposal_document.pdf`](Project_proposal_document.pdf)
+
+**Phase 2 — AI Agent** ([`ai_agent/`](ai_agent/))
+- [`docker-compose.yml`](ai_agent/docker-compose.yml) · [`Dockerfile`](ai_agent/Dockerfile) · [`streamlit_app.py`](ai_agent/streamlit_app.py) · [`requirements.txt`](ai_agent/requirements.txt) · [`.env.example`](ai_agent/.env.example) · [`README.md`](ai_agent/README.md)
+- [`app/config.py`](ai_agent/app/config.py) — all settings via env vars
+- [`app/llm/client.py`](ai_agent/app/llm/client.py) — Layer 3: Ollama / OpenAI / Anthropic
+- [`app/workflow/`](ai_agent/app/workflow/) — Layer 2: LangGraph state machine ([`graph.py`](ai_agent/app/workflow/graph.py) · [`router.py`](ai_agent/app/workflow/router.py) · [`nodes.py`](ai_agent/app/workflow/nodes.py) · [`state.py`](ai_agent/app/workflow/state.py) · [`prompts.py`](ai_agent/app/workflow/prompts.py))
+- [`app/tools/`](ai_agent/app/tools/) — Layer 4: 9 grounded tools ([`information_tool.py`](ai_agent/app/tools/information_tool.py) · [`analysis_tool.py`](ai_agent/app/tools/analysis_tool.py) · [`action_tool.py`](ai_agent/app/tools/action_tool.py) · [`reporting_tool.py`](ai_agent/app/tools/reporting_tool.py) · [`bonus_tools.py`](ai_agent/app/tools/bonus_tools.py))
+- [`app/memory/`](ai_agent/app/memory/) — Layer 5: [`short_term.py`](ai_agent/app/memory/short_term.py) · [`working_memory.py`](ai_agent/app/memory/working_memory.py) · [`long_term.py`](ai_agent/app/memory/long_term.py)
+- [`app/db/`](ai_agent/app/db/) — Layer 6: [`schema.sql`](ai_agent/app/db/schema.sql) · [`seed_data.sql`](ai_agent/app/db/seed_data.sql) · [`policies.json`](ai_agent/app/db/policies.json) · [`init_db.py`](ai_agent/app/db/init_db.py)
+- [`app/logging_system/logger.py`](ai_agent/app/logging_system/logger.py) — observability / audit trail
+- [`tests/eval/`](ai_agent/tests/eval/) — evaluation suite: [`test_cases.json`](ai_agent/tests/eval/test_cases.json) (35 cases) · [`run_eval.py`](ai_agent/tests/eval/run_eval.py) · [`README.md`](ai_agent/tests/eval/README.md)
+- [`scripts/`](ai_agent/scripts/) — demo preflight checks ([`preflight_demo.ps1`](ai_agent/scripts/preflight_demo.ps1) · [`preflight_demo.sh`](ai_agent/scripts/preflight_demo.sh))
+
+**Phase 2 docs** ([`ai_agent/docs/`](ai_agent/docs/))
+- [`TECHNICAL_REPORT.md`](ai_agent/docs/TECHNICAL_REPORT.md) — architecture, design rationale, controls, limitations, contributions
+- [`AI_Agent_Presentation.html`](ai_agent/docs/AI_Agent_Presentation.html) — animated presentation deck
+- [`SPEAKING_SCRIPTS.md`](ai_agent/docs/SPEAKING_SCRIPTS.md) — word-for-word scripts + step-by-step demo with expected answers
+- [`PRESENTATION_PLAN.md`](ai_agent/docs/PRESENTATION_PLAN.md) · [`RECORDING_GUIDE.md`](ai_agent/docs/RECORDING_GUIDE.md) · [`team/`](ai_agent/docs/team/) (per-member setup guides)
+- [`HUMAN_GUIDE.md`](ai_agent/docs/HUMAN_GUIDE.md) · [`OPERATIONS_GUIDE.md`](ai_agent/docs/OPERATIONS_GUIDE.md)
 
 ---
 
 ## 🎯 Key Features Explained
 
 ### Smart Enrollment
-
 **Problem**: Students enrolling without enough money, or in full classes.
 
-**Our Solution**:
 ```sql
--- Check 1: Financial validation
 IF dbo.fn_CanEnroll(@StudentName, @CourseFee) = 0
     THROW 50005, 'Insufficient balance';
-
--- Check 2: Capacity validation (via trigger)
 IF enrollment_count > capacity
     ROLLBACK;
-    
--- If both pass: Enroll and deduct fee
+-- If both pass: enroll and deduct fee
 INSERT INTO Enrollment...
 UPDATE StudentAccount SET balance = balance - @CourseFee;
 ```
 
-Result: Only qualified students get enrolled ✅
-
----
+Result: only qualified students get enrolled ✅ — and in Phase 2, the AI agent adds prerequisite and duplicate-enrollment checks on top, plus a confirmation step before anything is written.
 
 ### Grade Protection
-
 **Problem**: Accidentally changing final grades after semester ends.
 
-**Our Solution**:
 ```sql
--- Grades start as 'Draft'
 INSERT INTO Grade (gradeStatus) VALUES ('Draft');
-
--- Admin locks grades when semester ends
 EXEC usp_LockGrades @SectionID = 1;
-
--- Now instructors CAN'T modify them
 IF gradeStatus = 'Locked'
     THROW 50022, 'Cannot modify locked grade';
 ```
 
-Result: Final grades are protected 🔒
-
----
+Result: final grades are protected 🔒
 
 ### Teaching Load Management
-
 **Problem**: Instructors getting assigned too many courses.
 
-**Our Solution**:
 ```sql
--- Each instructor has a limit (default: 12 credits)
 INSERT INTO InstructorPolicy (maxCredits) VALUES (12);
-
--- When assigning, check current load
 IF (@CurrentLoad + @NewCourseCredits) > @MaxLoad
     THROW 60001, 'Teaching load exceeded';
 ```
 
-Result: Balanced workload for all instructors ⚖️
+Result: balanced workload for all instructors ⚖️
 
 ---
 
@@ -462,53 +401,29 @@ Result: Balanced workload for all instructors ⚖️
 
 We also built this system in **MongoDB** (NoSQL) to compare approaches!
 
-### SQL vs MongoDB
+**SQL (what we use):** structured tables with relationships, strong integrity, ACID guarantees — perfect for transactional data.
+**MongoDB (for analytics):** flexible documents, embedded data, fast analytics queries — great for reporting.
 
-**SQL (What we use):**
-- Structured tables with relationships
-- Strong data integrity
-- Perfect for transactional data
-- ACID guarantees
-
-**MongoDB (For analytics):**
-- Flexible documents
-- Embedded data
-- Fast analytics queries
-- Great for reporting
-
-### MongoDB Charts Dashboard
-
-We created 3 interactive visualizations:
-
-1. **Financial Status** - Who paid, who owes money
-2. **Instructor Workload** - Hours worked by instructor
-3. **Course Utilization** - Full vs. empty classes
-
-You can explore the MongoDB playground at: `mongodb/university_management_playground.mongodb.js`
+Explore the playground: [`mongodb/university_management_playground.mongodb.js`](mongodb/university_management_playground.mongodb.js)
 
 ---
 
 ## 🎓 What We Learned
 
 ### Database Design
-- How to normalize data properly
-- When to denormalize for performance
+- How to normalize data properly, when to denormalize for performance
 - Importance of foreign keys and constraints
 
 ### Business Logic
-- Implementing real-world rules in code
-- Transaction management (ACID)
-- Error handling and validation
+- Implementing real-world rules in code, transaction management (ACID), error handling
 
 ### Security
-- Role-based access control
-- Principle of least privilege
-- Why direct table access is dangerous
+- Role-based access control, principle of least privilege, why direct table access is dangerous
 
-### Automation
-- Triggers for automatic updates
-- Stored procedures for complex logic
-- Functions for reusable calculations
+### AI Agents (Phase 2)
+- Why a standalone LLM is not enough: grounding, tool use, and explicit workflow state
+- Keeping the LLM out of the facts: classification-only design against hallucination
+- Safety engineering: confirmation gates, stopping rules, fallbacks, evaluation, observability
 
 ---
 
@@ -517,52 +432,36 @@ You can explore the MongoDB playground at: `mongodb/university_management_playgr
 ### Technologies Used
 
 **Phase 1 — Database**
-- **Database**: SQL Server 2019
-- **Language**: T-SQL
-- **Analytics**: MongoDB + MongoDB Charts
+- **Database**: SQL Server 2019 · **Language**: T-SQL · **Analytics**: MongoDB + MongoDB Charts
 
 **Phase 2 — AI Agent**
-- **Language**: Python 3.11
-- **UI**: Streamlit
-- **Orchestration**: LangGraph
-- **LLM (default)**: Ollama (llama3.1, local/offline, no API key)
-- **LLM (optional)**: OpenAI GPT-4o-mini / Anthropic Claude
-- **Database**: SQLite
-- **Containerisation**: Docker + Docker Compose
-- **Version Control**: Git / GitHub
+- **Language**: Python 3.11 · **UI**: Streamlit · **Orchestration**: LangGraph
+- **LLM (default)**: Ollama `llama3.1` (local/offline, no API key) · **LLM (optional)**: OpenAI / Anthropic
+- **Database**: SQLite · **Containerisation**: Docker + Docker Compose · **Version Control**: Git / GitHub
 
 ### Design Patterns
-- Three-tier architecture
-- Repository pattern (via stored procedures)
-- Trigger-based automation
-- Role-based security
+- Three-tier architecture · repository pattern (via stored procedures) · trigger-based automation · role-based security
+- Phase 2: layered agent architecture, typed tool interfaces, explicit state machine, confirmation-gated actions
 
 ### Best Practices Followed
-- ✅ Normalized database design
-- ✅ Comprehensive constraints
-- ✅ Transaction management
-- ✅ Error handling
-- ✅ Code documentation
-- ✅ Security by default
+- ✅ Normalized database design · comprehensive constraints · transaction management
+- ✅ Error handling · code documentation · security by default
+- ✅ Phase 2: input validation on every tool, audit logging, automated evaluation, no hard-coded secrets, non-root container
 
 ---
 
 ## 🧪 Testing
 
-We included test data for:
-- **5 Students** (Aseel, Maryline, Maryam, Nour, Karim)
-- **3 Instructors** (Dr. Hassan, Dr. Rami, Dr. Maya)
-- **4 Courses** (CE301, CE410, EE320, CV220)
-- **3 Semesters** (Fall 2024, Spring 2025, Fall 2025)
+**Phase 1** — run [`sql/09_test_scripts.sql`](sql/09_test_scripts.sql) to test enrollment, payments, grades, payroll, transcripts, capacity enforcement, and teaching-load validation.
 
-Run `sql/09_test_scripts.sql` to test:
-- ✅ Student enrollment
-- ✅ Payment processing
-- ✅ Grade submission
-- ✅ Payroll generation
-- ✅ Transcript generation
-- ✅ Capacity enforcement
-- ✅ Teaching load validation
+**Phase 2** — the agent ships with an automated evaluation suite ([`ai_agent/tests/eval/`](ai_agent/tests/eval/)):
+- **35 scripted conversations** across 34 categories, seeded with 7 students (including Hana Tfaily 😄), 3 instructors, 5 courses, and 4 semesters
+- Covers grounded Q&A, all eligibility outcomes, the full confirm/cancel flows, memory across turns, **prompt injection**, **confirmation-bypass attempts**, duplicate actions, and human handoff
+- Reports task-completion rate, tool-selection accuracy, fallback accuracy, and unsafe-action count (must be 0)
+
+```bash
+cd ai_agent && python -m tests.eval.run_eval
+```
 
 ---
 
@@ -571,7 +470,7 @@ Run `sql/09_test_scripts.sql` to test:
 - [x] ~~REST API~~ → implemented as LangGraph tool layer (Phase 2)
 - [x] ~~Web dashboard~~ → Streamlit chat UI (Phase 2)
 - [x] ~~Advanced analytics~~ → 5 bonus tools: GPA prediction, institution reports, utilization analysis (Phase 2)
-- [ ] Course prerequisites system
+- [x] ~~Course prerequisites system~~ → prerequisite chain + eligibility checking (Phase 2)
 - [ ] Waitlist functionality
 - [ ] Email notifications
 - [ ] Degree audit (graduation checker)
@@ -581,17 +480,13 @@ Run `sql/09_test_scripts.sql` to test:
 
 ## 📝 Documentation
 
-Full documentation available:
-- **Presentation** - slides explaining everything
-- **ERD Diagram** - Visual database structure
-- **Use Case Diagram** - 6 user roles and their actions
-- **Compatibility Report** - Verification that design matches code
+- [Phase 1 presentation slides](docs/Presentation_Slides.pdf) · [ERD diagram](docs/ERD_diag_UMS.png) · [Use-case diagram](docs/USE_CASE_UMS.png)
+- [Phase 2 technical report](ai_agent/docs/TECHNICAL_REPORT.md) · [animated presentation](ai_agent/docs/AI_Agent_Presentation.html) · [speaking scripts & demo runbook](ai_agent/docs/SPEAKING_SCRIPTS.md)
+- [Project proposal](Project_proposal_document.pdf)
 
 ---
 
 ## 🤝 Contributing
-
-Want to improve this project?
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/awesome`)
@@ -603,16 +498,13 @@ Want to improve this project?
 
 ## 👥 Authors
 
-* **Maryline Karam** — Database Design, Documentation, MongoDB Integration, Docker/Deployment (Phase 2)
-* **Aseel Menhem** — SQL Implementation, LLM Core & LangGraph Orchestration (Phase 2)
-* **Hana Tfaily** — Tools Layer, Streamlit UI, Evaluation Suite (Phase 2)
+* **Maryline Karam** (6599) — *Phase 1*: database design, documentation, MongoDB integration & charts · *Phase 2*: **Tools Engineer** — the 9 typed tools, pydantic validation, domain data (`seed_data.sql`, `policies.json`), database schema additions
+* **Aseel Menhem** (6651) — *Phase 1*: SQL implementation (procedures, triggers, views, security) · *Phase 2*: **Agent Engineer** — LangGraph workflow & router, prompts, confirmation gate, fallback & human handoff, stopping rules
+* **Hana Tfaily** (6554) — *joined for Phase 2*: **Platform & Interface** — memory layers, Streamlit UI, Docker packaging, trace logging, evaluation suite, demo recording
+
 ---
 
 ## 🙏 Acknowledgments
 
-- SQL Server documentation
-- MongoDB documentation  
-- Database design best practices
-- Our instructor Eng Mohammad Aoude
-
----
+- SQL Server documentation · MongoDB documentation · database design best practices
+- Our instructor **Dr. Mohamad Aoude**

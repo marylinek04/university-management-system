@@ -168,10 +168,20 @@ inputs, confirm state-changing actions, log everything" requirements:
 
 - **Domain refusal.** Any message the intent classifier rates as
   `unsupported`, or rates below `INTENT_CONFIDENCE_THRESHOLD` (default
-  `0.4`), is routed straight to the `fallback` node, which returns the exact
-  required string: *"I cannot perform that action because it is outside my
-  supported university operations domain."* No tool is ever called on this
-  path.
+  `0.4`), is routed straight to the `fallback` node, which states the
+  limitation ("outside my supported university operations domain"), refuses
+  to guess an answer, and offers the simulated human-handoff path ("just say
+  'talk to a human'"). No tool is ever called on this path.
+- **Simulated human handoff.** When the user explicitly asks to reach a
+  person ("talk to a human", "connect me to staff", "escalate this"), a
+  deterministic regex in `classify_intent` (`_HANDOFF_RE` in
+  `app/workflow/router.py`) short-circuits to the `human_handoff` intent -
+  it never depends on the LLM being reachable. The workflow then creates a
+  traceable handoff ticket (`create_handoff_ticket`, logged to `agent_logs`
+  with a `HANDOFF-<timestamp>` reference and the user's recent messages) and
+  tells the user a staff member would follow up. In production this would
+  post to a real ticketing/queue system; here it is simulated by design, per
+  the project spec.
 - **Confirmation gate.** `create_enrollment_request` is the only
   state-changing tool in the system (`app.config.CONFIRMATION_REQUIRED_TOOLS
   = {"create_enrollment_request"}`). It is called with `confirm=False`
@@ -229,7 +239,19 @@ inputs, confirm state-changing actions, log everything" requirements:
 - **Database: SQLite, schema unchanged.** No vector database, embeddings, or
   RAG pipeline is used anywhere, per the project's explicit prohibition - all
   "memory" of facts is either the conversation history (short-term) or
-  structured rows in SQLite / `policies.json` (everything else).
+  structured rows in SQLite / `policies.json` (everything else). This design
+  is appropriate because the domain knowledge is small, fully structured, and
+  exactly enumerable: deterministic SQL lookups are cheaper, faster, exactly
+  reproducible, and auditable, whereas retrieval over embeddings would add
+  infrastructure and nondeterminism while answering the same questions less
+  precisely. RAG would become useful only if the knowledge source changed in
+  kind: large *unstructured* corpora such as a multi-hundred-page academic
+  handbook, accreditation documents, historical advising notes, or course
+  syllabi in free text - i.e., content that cannot be enumerated into rows
+  and must be searched semantically. At that point a retrieval layer would
+  complement (not replace) the structured tools: policies with exact values
+  (fees, GPA thresholds) should stay in structured form even then, so
+  recommendations remain grounded in authoritative records.
 - **UI: Streamlit.** Chosen because it gives a working chat UI, a
   conversation-history view, and custom panels (tool activity, workflow
   state/working memory) with minimal code, and runs well in the
@@ -256,14 +278,18 @@ additive and agent-specific:
 ## 8. Evaluation
 
 The evaluation suite lives in `tests/eval/` and is documented in detail in
-`tests/eval/README.md`. In summary: 31 scripted conversations across 30
+`tests/eval/README.md`. In summary: 35 scripted conversations across 34
 categories (information queries for every entity type, all five eligibility
 outcomes, the full enrollment confirm/cancel/missing-field flows, all four
 student-report types, every bonus tool, both institution-report subtypes, an
-out-of-domain refusal, a multi-turn working-memory case, and two role-based
-default cases), plus one leniently-scored "vague message" case. `run_eval.py`
-builds an isolated, freshly-seeded copy of the database (the real
-`app/db/university.db` is never touched), runs each conversation through
+out-of-domain refusal, a multi-turn working-memory case, two role-based
+default cases, a prompt-injection attempt, a confirmation-bypass tool-misuse
+attempt, a duplicate/conflicting-action case, and a human-handoff case), plus
+one leniently-scored "vague message" case. `run_eval.py` first verifies the
+configured LLM provider is reachable and aborts otherwise (a run without a
+live LLM routes everything to fallback and would produce a meaningless
+report), then builds an isolated, freshly-seeded copy of the database (the
+real `app/db/university.db` is never touched), runs each conversation through
 `run_turn`, and reports:
 
 - **Task completion rate** - fraction of (non-lenient) cases where every
@@ -362,14 +388,11 @@ ran, and is responsible for the final submitted code and this report.
 
 ## 11. Team contributions
 
-*Fill in with each team member's name and their primary area(s) of
-contribution before submission, e.g.:*
+| Team member | Course role | Primary contribution(s) |
+| --- | --- | --- |
+| Maryline Karam (6599) | Student 1 - Tools Engineer | The four required typed tools + five bonus tools (`app/tools/`), pydantic input schemas and validation, domain data (`policies.json`, `seed_data.sql`), database schema additions (Section 7), and tool documentation |
+| Aseel Menhem (6651) | Student 2 - Agent Engineer | LangGraph workflow, state machine and router (`app/workflow/`, Section 3), intent-classification prompts, stopping rules, confirmation gating, fallback and human-handoff logic, safety controls (Section 5) |
+| Hana Tfaily (6554) | Student 3 - Platform & Interface | Memory/state layers (`app/memory/`), Streamlit UI (`streamlit_app.py`), Docker packaging (`Dockerfile`, `docker-compose.yml`), trace logging (`app/logging_system/`), evaluation suite (`tests/eval/`, Section 8), and demo preparation |
 
-| Team member | Primary contribution(s) |
-| --- | --- |
-| _Name 1_ | _e.g. Database additions (Section 7), required tools (information & analysis), tools documentation_ |
-| _Name 2_ | _e.g. LangGraph workflow & router (Section 3), safety controls (Section 5)_ |
-| _Name 3_ | _e.g. Streamlit UI (Layer 1), Docker configuration_ |
-| _Name 4_ | _e.g. Bonus tools, evaluation suite (Section 8), technical report_ |
-
-All members reviewed the full codebase and this report.
+All members reviewed the full codebase and this report, and each member can
+explain both their own component and the overall system.
