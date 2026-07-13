@@ -92,6 +92,20 @@
   ul.clean{list-style:none}
   ul.clean li{padding-left:1.4vw;position:relative;margin-bottom:1.2vh}
   ul.clean li::before{content:"";position:absolute;left:0;top:.55em;width:.5vw;height:.5vw;border-radius:50%;background:var(--acc)}
+  /* mini pipeline (slide 4) */
+  .step{background:var(--navy);color:#fff;border-radius:999px;padding:.5vh .7vw;font-size:.78vw;font-weight:700;white-space:nowrap}
+  .arr{color:var(--acc);font-weight:700;font-size:1vw}
+  /* request/answer flow labels (slide 3) */
+  .vlab{position:absolute;top:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.6vh}
+  .vlab span.t{writing-mode:vertical-rl;font-size:.78vw;font-weight:700;letter-spacing:.22em;color:var(--acc)}
+  .vlab span.ar{color:var(--acc);font-size:1.3vw;line-height:1}
+  /* memory-across-turns diagram (slide 8) */
+  .turn{flex:1;background:var(--navy);border-radius:12px;padding:1.5vh 1vw}
+  .turn b{display:block;color:var(--ice);font-size:.8vw;letter-spacing:.16em}
+  .turn i{display:block;color:#fff;font-size:1.02vw;font-weight:700;font-style:normal;margin:.5vh 0}
+  .turn s{display:block;text-decoration:none;color:var(--ice);font-size:.84vw;line-height:1.35}
+  .tarr{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.3vh;color:var(--acc);font-weight:700;font-size:1.5vw}
+  .tarr em{font-size:.72vw;color:var(--mut);font-style:normal;white-space:nowrap;font-weight:600}
 </style>
 </head>
 <body>
@@ -139,7 +153,9 @@
 <section class="slide">
   <h2 class="a">Seven layers, one container stack</h2>
   <div class="row">
-    <div class="col" style="flex:1.15">
+    <div class="col" style="flex:1.15;position:relative;padding:0 2.1vw">
+      <div class="vlab a" style="left:0"><span class="t">USER MESSAGE</span><span class="ar">↓</span></div>
+      <div class="vlab a" style="right:0"><span class="ar">↑</span><span class="t">GROUNDED ANSWER</span></div>
       <div class="layer a"><b>1 · Chat interface</b><span>Streamlit chat + live workflow/memory panels</span></div>
       <div class="layer a"><b>2 · Orchestration</b><span>LangGraph state machine: routing, gates, stopping rules</span></div>
       <div class="layer a"><b>3 · LLM core</b><span>Ollama llama3.1 (local, no API key) — classifies intent only</span></div>
@@ -165,7 +181,7 @@
     <div class="card col a"><span class="pill">ANALYSIS</span><div class="mono">analyze_enrollment_eligibility</div><p style="margin-top:.8vh">Deterministic rules: prerequisites, capacity, balance, duplicate enrollment.</p><p style="font-style:italic;color:var(--mut);margin-top:.8vh">Same input, same verdict — reproducible</p></div>
   </div>
   <div class="row">
-    <div class="card col a"><span class="pill">ACTION</span><div class="mono">create_enrollment_request</div><p style="margin-top:.8vh">Two-phase: preview (no write) → execute only after the user confirms.</p><p style="font-style:italic;color:var(--mut);margin-top:.8vh">Re-validates before writing; fee deducted atomically</p></div>
+    <div class="card col a"><span class="pill">ACTION</span><div class="mono">create_enrollment_request</div><p style="margin-top:.8vh">The only tool that writes — and it can't skip the gate:</p><div style="display:flex;align-items:center;gap:.35vw;margin-top:1vh;flex-wrap:wrap"><span class="step">preview · no write</span><span class="arr">→</span><span class="step" style="background:var(--acc)">user says "yes"</span><span class="arr">→</span><span class="step">re-validate</span><span class="arr">→</span><span class="step">execute + deduct fee</span></div></div>
     <div class="card col a"><span class="pill">REPORTING</span><div class="mono">generate_student_report</div><p style="margin-top:.8vh">Transcript, GPA summary, academic standing, recommendations.</p><p style="font-style:italic;color:var(--mut);margin-top:.8vh">Structured output, ready for handoff</p></div>
   </div>
   <p class="a" style="margin-top:2.4vh;font-size:1.1vw;color:var(--ink)"><b style="color:var(--navy)">Bonus:</b> GPA prediction · study planner · payroll · section utilization · institution reports — plus a handoff-ticket tool. Every tool has a pydantic schema, typed output, and defined error behavior.</p>
@@ -239,8 +255,12 @@
     <div class="card col a"><span class="pill">REQUIRED</span><h3 style="font-family:Cambria,Georgia,serif;font-size:1.9vw">Working</h3><p>Explicit task state — current intent, collected info, missing fields, pending confirmation, latest tool result, workflow state. Rendered live in the side panel.</p></div>
     <div class="card col a"><span class="pill bonus">BONUS</span><h3 style="font-family:Cambria,Georgia,serif;font-size:1.9vw">Long-term</h3><p>Per-user preferences persisted in SQLite across separate sessions.</p></div>
   </div>
-  <div class="card a" style="background:var(--navy);margin-top:2.6vh">
-    <p style="color:#fff;font-size:1.15vw"><b style="color:var(--ice)">Seen in the demo:</b> "What is my GPA summary?" → the agent resolves the student from session memory; "And my transcript?" → the identifier carries over from the previous turn.</p>
+  <div class="a" style="display:flex;align-items:stretch;gap:.9vw;margin-top:2.6vh">
+    <div class="turn"><b>TURN 1</b><i>"I'd like to enroll in CE410."</i><s>collected: student + course · gate opens: pending confirmation</s></div>
+    <div class="tarr"><span>→</span><em>state persists</em></div>
+    <div class="turn"><b>TURN 2</b><i>"yes"</i><s>pending confirmation resolved → action executes, fee deducted</s></div>
+    <div class="tarr"><span>→</span><em>identity persists</em></div>
+    <div class="turn"><b>TURN 3</b><i>"What is my GPA?"</i><s>student resolved from session memory — no name repeated</s></div>
   </div>
   <div class="footer">8 / 10</div>
 </section>

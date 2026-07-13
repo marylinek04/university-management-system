@@ -24,29 +24,13 @@ Part B = Aseel, Part C = Hana (scripts below).
 > and getting the answer instantly — checked against the real database, not
 > guessed.
 >
-> That's what we built. Good morning — we are presenting the University
-> Operations AI Agent: a Dockerized, domain-specific AI agent that answers
-> university questions, checks enrollment eligibility, executes enrollments
-> safely, and generates reports — all grounded in a real university
-> database.
->
-> I'm Maryline, the Tools Engineer — I built the nine tools and the data
-> layer the agent stands on.
-
-*(gesture to Aseel)*
-
-> **Aseel:** I'm Aseel, the Agent Engineer — I built the workflow: the state
-> machine that decides what the agent is allowed to do, and the safety rails
-> that stop it doing anything else.
-
-*(gesture to Hana)*
-
-> **Hana:** And I'm Hana, Platform and Interface — I built the memory, the
-> web interface, the Docker packaging, and the evaluation suite. The demo
-> you'll watch in a few minutes is running live on my laptop — and yes, I
-> enroll myself in a course during it.
-
-> **Maryline:** Let's start with the problem.
+> That's what we built. Hi everyone — it's Maryline, and together with
+> Aseel and Hana we're presenting the University Operations AI Agent: a
+> Dockerized, domain-specific AI agent that answers university questions,
+> checks enrollment eligibility, executes enrollments safely, and generates
+> reports — all grounded in a real university database. Who built what is
+> on the slide, and you'll hear all three of our voices along the way.
+> Let's start with the problem.
 
 ### Slide 2 - The problem
 
@@ -120,6 +104,44 @@ Part B = Aseel, Part C = Hana (scripts below).
 > gate, refuse what it shouldn't do — and prove it with tests.
 
 *(slide 6 stays up for that sentence, then cut to the demo recording)*
+
+---
+
+## DEMO VOICE-OVERS (over Hana's recording, ≈3 min total)
+
+Names are dropped in naturally — no titles. Part A flows straight out of
+Maryline's slide-6 sentence; Aseel and Hana each say their name once when
+their part starts, so the audience knows whose voice they're hearing.
+
+### Part A — Maryline (~50 s)
+> Here's a grounded lookup: we ask about course CE410. Every value in the
+> reply — the credits, the eighteen-hundred fee, the prerequisite — comes
+> straight out of the database; the model only classified the question.
+>
+> Next, the analysis tool. We ask whether Nour Hamad can enroll in CE410.
+> This is a deterministic rule engine — prerequisites, seat capacity,
+> account balance, duplicate enrollment. Nour is already enrolled, so the
+> answer is NOT eligible, with the exact reason. Same input, same verdict,
+> every time.
+
+### Part B — Aseel (~80 s)
+> Aseel here — now the part that actually changes the database. Hana asks
+> to enroll herself in CE410. Watch the workflow panel on the right: the
+> agent stops at CONFIRMATION REQUIRED. The action tool ran in preview
+> mode — nothing has been written yet.
+>
+> Only her explicit "yes" executes it: eligibility is re-checked, the
+> enrollment is created, and the fee is deducted — you can see the new
+> balance, twenty-two hundred. When she asks to enroll again, re-validation
+> rejects it: no duplicate enrollment, no double charge.
+>
+> An off-topic request — a flight to Paris — hits the fallback: the agent
+> states its limitation and offers a human instead of guessing. And "talk
+> to a human" files a traceable handoff ticket. That escalation path is a
+> regular expression, not the model — it works even if the AI is down.
+
+### Part C — Hana (~40 s)
+*(script below, inside her runbook — it starts with her name.)*
 
 ---
 
@@ -228,6 +250,7 @@ trimmed or covered by narration.
 
 ### Your voice-over (Part C of the video, ~40 s)
 
+> And this is Hana — everything you've been watching runs on my laptop.
 > Notice what I didn't do: I never told it who I am after switching my name
 > once. Short-term memory holds my session identity, so "my GPA" resolves to
 > me — three point five, Dean's List, straight from my grades in the
