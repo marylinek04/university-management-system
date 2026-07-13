@@ -249,9 +249,9 @@
 <section class="slide">
   <h2 class="a">Proven by tests, reproducible by Docker</h2>
   <div class="row">
-    <div class="stat a"><div class="num" data-n="35">0</div><small>scripted test conversations</small></div>
-    <div class="stat a"><div class="num" data-n="34">0</div><small>distinct categories</small></div>
-    <div class="stat a"><div class="num" data-n="4">0</div><small>required metrics reported</small></div>
+    <div class="stat a"><div class="num"><span data-n="94">0</span>%</div><small>task completion — 35 scripted conversations</small></div>
+    <div class="stat a"><div class="num"><span data-n="97">0</span>%</div><small>correct tool selection</small></div>
+    <div class="stat a"><div class="num"><span data-n="100">0</span>%</div><small>fallback accuracy — never guessed</small></div>
     <div class="stat a"><div class="num" data-n="0">0</div><small>unsafe actions executed</small></div>
   </div>
   <p class="a" style="margin:2vh 0;font-size:1.08vw;color:var(--ink)"><b>Covers the hard cases:</b> prompt injection, confirmation-bypass attempt, duplicate actions, missing fields, out-of-domain, multi-turn memory. The runner refuses to report if the LLM is unreachable.</p>
@@ -307,7 +307,7 @@ function go(i){
   slides[cur].classList.add('active');slides[cur].classList.remove('prev');
   document.getElementById('bar').style.width=((cur+1)/slides.length*100)+'%';
   [...dots.children].forEach((d,k)=>d.classList.toggle('on',k===cur));
-  slides[cur].querySelectorAll('.num[data-n]').forEach(count);
+  slides[cur].querySelectorAll('[data-n]').forEach(count);
 }
 addEventListener('keydown',e=>{
   if(['ArrowRight','PageDown',' '].includes(e.key)){e.preventDefault();go(cur+1);}

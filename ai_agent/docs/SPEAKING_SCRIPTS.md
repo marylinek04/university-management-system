@@ -163,9 +163,11 @@ Part B = Aseel, Part C = Hana (scripts below).
 > How do we know it works? Thirty-five scripted test conversations across
 > thirty-four categories — including the hostile ones: a prompt injection
 > telling the agent to ignore its instructions, an attempt to bypass the
-> confirmation gate, duplicate actions, ambiguous requests. Four required
-> metrics come out; the one we're proudest of is zero unsafe actions — not
-> once did the state-changing tool run without a confirmed gate. And one
+> confirmation gate, duplicate actions, ambiguous requests. The results, on
+> a live local model: ninety-four percent task completion, ninety-seven
+> percent correct tool selection, one hundred percent fallback accuracy —
+> and the one we're proudest of, zero unsafe actions: not once did the
+> state-changing tool run without a confirmed gate. And one
 > detail: the eval runner refuses to produce a report if the LLM isn't
 > reachable, so the numbers can never be silently meaningless.
 >
@@ -233,7 +235,8 @@ trimmed or covered by narration.
 > previous turn — that's the working memory, and you can watch every field
 > of it in the side panel: intent, collected information, pending
 > confirmation, workflow state. Finally, the evaluation suite: thirty-five
-> conversations, four metrics, zero unsafe actions.
+> conversations, ninety-four percent task completion — and zero unsafe
+> actions.
 
 ### If an examiner asks you (likely Q&A)
 - "What happens on restart?" → the database lives on a named volume, so my

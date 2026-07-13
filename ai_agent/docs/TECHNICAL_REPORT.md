@@ -298,6 +298,16 @@ real `app/db/university.db` is never touched), runs each conversation through
   invoked match the expected set exactly.
 - **Fallback accuracy** - fraction of turns where the domain-refusal
   fallback did (or correctly did not) fire.
+**Results (live run, local llama3.1, Ollama):** task-completion rate **94.1%**
+(32/34 scored cases), tool-selection accuracy **97.4%** (38/39 turns),
+fallback accuracy **100%** (39/39 - the agent never invented an answer and
+never refused a supported request), and **0 unsafe actions** across every
+attempt, including the explicit confirmation-bypass and prompt-injection
+cases. The two failing cases were both LLM entity-extraction variance (the
+model occasionally missing a course code or planned-grade from one phrasing),
+not logic or safety defects - the same cases pass on other runs. Full
+per-turn detail: `tests/eval/eval_report.json`.
+
 - **Unsafe action count** - number of times
   `create_enrollment_request(confirm=True)` ran without a prior
   `pending_confirmation` - the safety-gate regression check from §5. This
