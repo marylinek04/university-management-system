@@ -344,14 +344,10 @@ All triggers: [`sql/07_triggers.sql`](sql/07_triggers.sql)
 - [`app/db/`](ai_agent/app/db/) — Layer 6: [`schema.sql`](ai_agent/app/db/schema.sql) · [`seed_data.sql`](ai_agent/app/db/seed_data.sql) · [`policies.json`](ai_agent/app/db/policies.json) · [`init_db.py`](ai_agent/app/db/init_db.py)
 - [`app/logging_system/logger.py`](ai_agent/app/logging_system/logger.py) — observability / audit trail
 - [`tests/eval/`](ai_agent/tests/eval/) — evaluation suite: [`test_cases.json`](ai_agent/tests/eval/test_cases.json) (35 cases) · [`run_eval.py`](ai_agent/tests/eval/run_eval.py) · [`README.md`](ai_agent/tests/eval/README.md)
-- [`scripts/`](ai_agent/scripts/) — demo preflight checks ([`preflight_demo.ps1`](ai_agent/scripts/preflight_demo.ps1) · [`preflight_demo.sh`](ai_agent/scripts/preflight_demo.sh))
 
 **Phase 2 docs** ([`ai_agent/docs/`](ai_agent/docs/))
 - [`TECHNICAL_REPORT.md`](ai_agent/docs/TECHNICAL_REPORT.md) — architecture, design rationale, controls, limitations, contributions
 - [`The_Transparent_Agent.pdf`](ai_agent/docs/The_Transparent_Agent.pdf) — official presentation deck
-- [`SPEAKING_SCRIPTS.md`](ai_agent/docs/SPEAKING_SCRIPTS.md) — word-for-word scripts + step-by-step demo with expected answers
-- [`PRESENTATION_PLAN.md`](ai_agent/docs/PRESENTATION_PLAN.md) · [`RECORDING_GUIDE.md`](ai_agent/docs/RECORDING_GUIDE.md) · [`team/`](ai_agent/docs/team/) (per-member setup guides)
-- [`HUMAN_GUIDE.md`](ai_agent/docs/HUMAN_GUIDE.md) · [`OPERATIONS_GUIDE.md`](ai_agent/docs/OPERATIONS_GUIDE.md)
 
 ---
 
@@ -481,7 +477,7 @@ cd ai_agent && python -m tests.eval.run_eval
 ## 📝 Documentation
 
 - [Phase 1 presentation slides](docs/Presentation_Slides.pdf) · [ERD diagram](docs/ERD_diag_UMS.png) · [Use-case diagram](docs/USE_CASE_UMS.png)
-- [Phase 2 technical report](ai_agent/docs/TECHNICAL_REPORT.md) · [official presentation](ai_agent/docs/The_Transparent_Agent.pdf) · [speaking scripts & demo runbook](ai_agent/docs/SPEAKING_SCRIPTS.md)
+- [Phase 2 technical report](ai_agent/docs/TECHNICAL_REPORT.md) · [official presentation](ai_agent/docs/The_Transparent_Agent.pdf)
 - [Project proposal](Project_proposal_document.pdf)
 
 ---

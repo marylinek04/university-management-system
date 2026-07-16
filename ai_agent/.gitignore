@@ -10,3 +10,15 @@ __pycache__/
 # NOTE: tests/eval/eval_report.json is intentionally NOT ignored - the final
 # report (generated with a live LLM via `python -m tests.eval.run_eval`) is a
 # required deliverable and must be committed with the submission.
+
+# Internal team materials - kept locally, not part of the submission repo
+docs/SPEAKING_SCRIPTS.md
+docs/PRESENTATION_PLAN.md
+docs/RECORDING_GUIDE.md
+docs/HUMAN_GUIDE.md
+docs/OPERATIONS_GUIDE.md
+docs/PRESENTATION_INTRO.pdf
+docs/PRESENTATION_TEAM.pdf
+docs/AI_Agent_Presentation.*
+docs/team/
+scripts/

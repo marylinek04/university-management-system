@@ -28,9 +28,8 @@ This project does **not** redesign the underlying database. It adds a
 | **Aseel Menhem** (6651) | Agent Engineer (Student 2) | LangGraph workflow & router (`app/workflow/`), prompts, confirmation gate, stopping rules, fallback & human-handoff logic |
 | **Hana Tfaily** (6554) | Platform & Interface (Student 3) | Memory layers (`app/memory/`), Streamlit UI, Docker packaging, trace logging, evaluation suite (`tests/eval/`), demo recording |
 
-Per-member setup guides and speaking scripts: `docs/team/`. Presentation
-materials: `docs/The_Transparent_Agent.pdf`, `docs/SPEAKING_SCRIPTS.md`,
-`docs/PRESENTATION_PLAN.md`, `docs/RECORDING_GUIDE.md`.
+Presentation: `docs/The_Transparent_Agent.pdf`. Full design rationale and
+limitations: `docs/TECHNICAL_REPORT.md`.
 
 ## Quick start (Docker - recommended)
 
