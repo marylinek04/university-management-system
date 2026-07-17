@@ -7,6 +7,8 @@ A complete university operations platform — from the core SQL Server database 
 >
 > **Made by**: Maryline Karam · Aseel Menhem · Hana Tfaily
 
+> 🎥 **[Watch the video presentation & live demo](https://drive.google.com/drive/folders/19YgM857kqSZUT-1LRUfBXqsiOPViCGoI?usp=sharing)**
+
 ---
 
 ## 📖 What is This?
@@ -478,6 +480,7 @@ cd ai_agent && python -m tests.eval.run_eval
 
 - [Phase 1 presentation slides](docs/Presentation_Slides.pdf) · [ERD diagram](docs/ERD_diag_UMS.png) · [Use-case diagram](docs/USE_CASE_UMS.png)
 - [Phase 2 technical report](ai_agent/docs/TECHNICAL_REPORT.md) · [official presentation](ai_agent/docs/The_Transparent_Agent.pdf)
+- 🎥 [Video presentation & live demo](https://drive.google.com/drive/folders/19YgM857kqSZUT-1LRUfBXqsiOPViCGoI?usp=sharing)
 - [Project proposal](Project_proposal_document.pdf)
 
 ---
