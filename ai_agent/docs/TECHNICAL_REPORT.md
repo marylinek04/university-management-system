@@ -111,7 +111,17 @@ them based on `current_intent`, `missing_fields`, and `pending_confirmation`:
   "what's my payroll" doesn't need to give their own name either).
 - **VALIDATION** - checks `collected_information` against
   `INTENT_REQUIRED_FIELDS`. If anything is missing, the turn ends here with a
-  clarifying question - no tool is called.
+  clarifying question - no tool is called. It also enforces per-user data
+  access: for the five student-scoped intents
+  (`eligibility_check`/`enrollment_request`/`student_report`/`gpa_prediction`/`study_plan`),
+  a logged-in `student` may only act on their own record. The identifier the
+  user gave and the logged-in user's own name are both resolved through the
+  same `find_student` lookup every tool uses (id, full name, or email, so
+  format differences can't cause a false match/mismatch); if they resolve to
+  different students, the turn ends here with a refusal and no tool - and
+  therefore no student data - is touched. Staff roles (registrar, instructor,
+  finance_officer) are unrestricted, mirroring Phase 1's role-based
+  `GRANT EXECUTE` model.
 - **ANALYSIS** - runs `analyze_enrollment_eligibility` for
   `eligibility_check` and `enrollment_request` intents.
 - **CONFIRMATION_REQUIRED** - for `enrollment_request` only: calls
@@ -278,14 +288,15 @@ additive and agent-specific:
 ## 8. Evaluation
 
 The evaluation suite lives in `tests/eval/` and is documented in detail in
-`tests/eval/README.md`. In summary: 35 scripted conversations across 34
+`tests/eval/README.md`. In summary: 37 scripted conversations across 36
 categories (information queries for every entity type, all five eligibility
 outcomes, the full enrollment confirm/cancel/missing-field flows, all four
 student-report types, every bonus tool, both institution-report subtypes, an
 out-of-domain refusal, a multi-turn working-memory case, two role-based
 default cases, a prompt-injection attempt, a confirmation-bypass tool-misuse
-attempt, a duplicate/conflicting-action case, and a human-handoff case), plus
-one leniently-scored "vague message" case. `run_eval.py` first verifies the
+attempt, a duplicate/conflicting-action case, a human-handoff case, and two
+cross-student data-access-denial cases), plus one leniently-scored "vague
+message" case. `run_eval.py` first verifies the
 configured LLM provider is reachable and aborts otherwise (a run without a
 live LLM routes everything to fallback and would produce a meaningless
 report), then builds an isolated, freshly-seeded copy of the database (the
@@ -307,6 +318,16 @@ cases. The two failing cases were both LLM entity-extraction variance (the
 model occasionally missing a course code or planned-grade from one phrasing),
 not logic or safety defects - the same cases pass on other runs. Full
 per-turn detail: `tests/eval/eval_report.json`.
+
+*Note on `AUTHZ-01`/`AUTHZ-02`:* these two cases were added after the run
+above (the 35-case suite it reports on predates them) to cover the per-user
+data-access check described in §2/§9. The underlying logic has been verified
+deterministically - direct unit tests against `node_validation` and full
+`run_turn` graph traversals with intent classification mocked (bypassing the
+LLM) confirm both cases produce the expected denial with zero tool calls -
+but they have not yet been exercised in a live Ollama run. `eval_report.json`
+will be regenerated (35 -> 37 cases) the next time the full suite is run
+end-to-end.
 
 - **Unsafe action count** - number of times
   `create_enrollment_request(confirm=True)` ran without a prior
@@ -369,6 +390,19 @@ current source for every required and bonus tool.
   itself; this is acceptable at the scale this project targets but would not
   scale to a production multi-user registrar system without moving to a
   server-based database.
+- **Per-user data-access authorization (resolved).** Early versions of the
+  agent let any authenticated user supply an arbitrary `student_identifier`
+  for the five student-scoped intents, so a student could technically ask for
+  a different student's GPA, transcript, or eligibility status and the agent
+  would answer - unlike Phase 1, where `usp_GetMyTranscript` and friends are
+  scoped per session via SQL Server role membership (`GRANT EXECUTE`). This
+  was fixed by adding a deterministic check in `node_validation`
+  (`app/workflow/nodes.py`): for a `student`-role user, the requested
+  identifier and the logged-in user's own name are both resolved via
+  `find_student` and compared on `student_id`; a mismatch ends the turn with
+  a refusal before any tool - and therefore any student data - is touched.
+  Staff roles are unaffected. Covered by `AUTHZ-01`/`AUTHZ-02` in
+  `test_cases.json` (see §8).
 - **Development-sandbox Docker/network constraints.** This project was
   developed inside a sandboxed environment without a Docker daemon and with
   restricted outbound network access, so `docker compose up --build` and a
