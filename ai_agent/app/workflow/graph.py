@@ -11,7 +11,10 @@ Graph topology
         --(action_execution)-->      action_execution       -> report_generation
 
     validation
-        --(finalize)-->        finalize -> END         (missing required fields)
+        --(finalize)-->        finalize -> END         (missing required fields,
+                                                          or a student-role user
+                                                          requesting another
+                                                          student's data - denied)
         --(analysis)-->        analysis
         --(report_generation)--> report_generation
 

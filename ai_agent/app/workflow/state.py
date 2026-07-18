@@ -95,6 +95,7 @@ class AgentState(TypedDict, total=False):
     tool_activity: List[ToolActivity]
     final_response: Optional[str]
     fallback_reason: Optional[str]
+    authorization_denied: Optional[bool]
 
 
 def new_agent_state(session_id: str, user_name: str = "", user_role: str = "") -> AgentState:
@@ -116,6 +117,7 @@ def new_agent_state(session_id: str, user_name: str = "", user_role: str = "") -
         tool_activity=[],
         final_response=None,
         fallback_reason=None,
+        authorization_denied=None,
     )
 
 
@@ -127,6 +129,7 @@ def start_turn(state: AgentState, user_message: str) -> AgentState:
     state["tool_activity"] = []
     state["final_response"] = None
     state["fallback_reason"] = None
+    state["authorization_denied"] = None
     # collected_information / pending_confirmation / latest_tool_result persist
     # across turns intentionally (working memory continuity).
     return state

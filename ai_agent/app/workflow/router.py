@@ -123,7 +123,7 @@ def route_after_intent(state: AgentState) -> str:
 
 def route_after_validation(state: AgentState) -> str:
     """VALIDATION -> {finalize, analysis, report_generation}."""
-    if state.get("missing_fields"):
+    if state.get("missing_fields") or state.get("authorization_denied"):
         return "finalize"
 
     intent = state.get("current_intent")

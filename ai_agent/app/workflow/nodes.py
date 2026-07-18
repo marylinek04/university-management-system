@@ -21,6 +21,7 @@ import json
 from typing import Any
 
 from ..config import MAX_ITERATIONS
+from ..db.connection import get_connection
 from ..logging_system import AgentLogger
 from ..tools import (
     analyze_enrollment_eligibility,
@@ -33,6 +34,7 @@ from ..tools import (
     get_university_information,
     predict_future_gpa,
 )
+from ..tools.db_helpers import find_student
 from .router import classify_intent
 from .state import AgentState, INTENT_REQUIRED_FIELDS
 
@@ -189,6 +191,50 @@ def node_information_gathering(state: AgentState) -> AgentState:
     return state
 
 
+_ACCESS_DENIED_MESSAGE = (
+    "I can only share your own academic information. I'm not able to look up "
+    "another student's records - if you need that, please contact the registrar "
+    "or ask to be connected to a human staff member."
+)
+
+
+def _self_access_violation(state: AgentState, intent: str, collected: dict) -> bool:
+    """Deterministic per-user data-access check (Layer 2, VALIDATION).
+
+    A logged-in ``student`` may only look up / act on their own record for
+    the student-scoped intents. Staff roles (registrar, instructor,
+    finance_officer) are unrestricted here, mirroring the role-based access
+    already enforced at the database layer in Phase 1 (``GRANT EXECUTE`` /
+    session-scoped stored procedures).
+
+    Resolution goes through ``find_student`` (the same lookup every tool
+    uses) so an id, full name, or email are all compared on the underlying
+    ``student_id`` rather than as raw strings - this avoids both false
+    positives (e.g. "Maryline Karam" vs her own student id) and false
+    negatives (case/format differences). If either side fails to resolve,
+    this check does not fire; the downstream tool's own "not found" handling
+    still applies, so no data can leak either way.
+    """
+    if intent not in _STUDENT_INTENTS:
+        return False
+    if (state.get("user_role") or "").lower() != "student":
+        return False
+
+    requested_identifier = collected.get("student_identifier")
+    user_name = state.get("user_name")
+    if not requested_identifier or not user_name:
+        return False
+
+    with get_connection() as conn:
+        requested_row = find_student(conn, requested_identifier)
+        own_row = find_student(conn, user_name)
+
+    if requested_row is None or own_row is None:
+        return False
+
+    return requested_row["student_id"] != own_row["student_id"]
+
+
 # ---------------------------------------------------------------------------
 # Node: VALIDATION
 # ---------------------------------------------------------------------------
@@ -214,6 +260,20 @@ def node_validation(state: AgentState) -> AgentState:
             state["final_response"] = f"Could you please tell me {asks[0]}?"
         else:
             state["final_response"] = "Could you please tell me " + ", and ".join(asks) + "?"
+        return state
+
+    if _self_access_violation(state, intent, collected):
+        state["authorization_denied"] = True
+        _logger(state).log_validation_failure(
+            tool_name=intent,
+            reason=(
+                f"Student '{state.get('user_name')}' attempted to access another "
+                f"student's data ('{collected.get('student_identifier')}') - denied"
+            ),
+            workflow_state=state["workflow_state"],
+            intent=intent,
+        )
+        state["final_response"] = _ACCESS_DENIED_MESSAGE
 
     return state
 

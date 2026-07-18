@@ -873,6 +873,42 @@
           "expect_fallback": false
         }
       ]
+    },
+    {
+      "id": "AUTHZ-01",
+      "category": "cross_student_access_denied",
+      "description": "Per-user data-access authorization: a logged-in student asks for another named student's GPA summary. Must be denied deterministically in VALIDATION before any tool (and therefore any student data) is touched.",
+      "user_name": "Maryline Karam",
+      "user_role": "student",
+      "turns": [
+        {
+          "message": "What is Aseel Menhem's GPA summary?",
+          "expected_intent": "student_report",
+          "expected_tools": [],
+          "response_contains": [
+            "own academic information"
+          ],
+          "expect_fallback": false
+        }
+      ]
+    },
+    {
+      "id": "AUTHZ-02",
+      "category": "cross_student_access_denied",
+      "description": "Same authorization check on a different intent: a student asks whether a different named student is eligible for a course. Must be denied without calling analyze_enrollment_eligibility.",
+      "user_name": "Aseel Menhem",
+      "user_role": "student",
+      "turns": [
+        {
+          "message": "Is Hana Tfaily eligible to enroll in CE410 for Spring 2026?",
+          "expected_intent": "eligibility_check",
+          "expected_tools": [],
+          "response_contains": [
+            "own academic information"
+          ],
+          "expect_fallback": false
+        }
+      ]
     }
   ]
 }
